@@ -48,15 +48,21 @@ export function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
+      {/* Header - Mobile only */}
+      <div className="lg:hidden sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
         <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-light">Historique</h1>
       </div>
 
-      <div className="p-4 space-y-6 max-w-md mx-auto">
+      {/* Desktop Header */}
+      <div className="hidden lg:block border-b border-muted/10 px-8 py-6">
+        <h1 className="text-2xl font-light text-text">Historique</h1>
+        <p className="text-muted mt-1">Toutes tes tentations passées</p>
+      </div>
+
+      <div className="p-4 lg:p-8 space-y-6 max-w-md lg:max-w-none mx-auto">
         {/* Hero Stats */}
         <div className="text-center py-6">
           <p className="text-sm text-muted mb-2">Total economise</p>
@@ -98,7 +104,7 @@ export function HistoryPage() {
         )}
 
         {/* Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto py-1 -mx-4 px-4">
+        <div className="flex gap-2 overflow-x-auto py-1 -mx-4 px-4 lg:mx-0 lg:px-0">
           {FILTERS.map((f) => (
             <button
               key={f.value}
@@ -122,7 +128,7 @@ export function HistoryPage() {
             <p className="text-muted">Aucune tentation</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
             {filteredTemptations.map((temptation) => (
               <TemptationCard
                 key={temptation.id}

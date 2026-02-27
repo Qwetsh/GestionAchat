@@ -112,15 +112,21 @@ export function NewTemptationPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
+      {/* Header - Mobile only */}
+      <div className="lg:hidden sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
         <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-light">Nouvelle tentation</h1>
       </div>
 
-      <div className="p-6 space-y-10 max-w-md mx-auto">
+      {/* Desktop Header */}
+      <div className="hidden lg:block border-b border-muted/10 px-8 py-6">
+        <h1 className="text-2xl font-light text-text">Nouvelle tentation</h1>
+        <p className="text-muted mt-1">Ajoute une tentation à résister</p>
+      </div>
+
+      <div className="p-6 lg:p-8 space-y-10 max-w-md mx-auto lg:mx-0">
         {/* Photo Section */}
         <div>
           <input

@@ -46,8 +46,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen lg:min-h-0 lg:h-full flex items-center justify-center p-6 bg-background">
+      <div className="w-full max-w-sm lg:max-w-none">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-light text-text mb-2">Bon retour</h1>
           <p className="text-muted">Entre ton code PIN</p>

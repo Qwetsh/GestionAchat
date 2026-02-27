@@ -7,6 +7,7 @@ import {
   type Temptation,
 } from '@/features/temptation/temptationService'
 import { useGamificationStore, getLevelTitle } from '@/stores/gamificationStore'
+import { useBadgeStore, type Badge } from '@/stores/badgeStore'
 import { ArrowLeft } from 'lucide-react'
 
 interface MonthlyStats {
@@ -22,8 +23,49 @@ interface MonthlyStats {
 export function StatsPage() {
   const navigate = useNavigate()
   const { xp, level, bestStreak, currentStreak, getLevelProgress, getNextLevelXP } = useGamificationStore()
+  const { getBadgesByCategory } = useBadgeStore()
   const temptations = useMemo(() => getAllTemptations(), [])
   const stats = useMemo(() => getStats(), [])
+
+  // Get badges by category
+  const milestoneBadges = getBadgesByCategory('milestone')
+  const streakBadges = getBadgesByCategory('streak')
+  const categoryBadges = getBadgesByCategory('category')
+
+  const formatBadgeDate = (isoDate: string) => {
+    return new Date(isoDate).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
+  const BadgeItem = ({ badge }: { badge: Badge }) => {
+    const isUnlocked = badge.unlockedAt !== null
+    return (
+      <div
+        className={`relative flex flex-col items-center p-3 rounded-xl border transition-all ${
+          isUnlocked
+            ? 'bg-primary/5 border-primary/20'
+            : 'bg-muted/5 border-muted/10 opacity-40 grayscale'
+        }`}
+        title={isUnlocked ? `Débloqué le ${formatBadgeDate(badge.unlockedAt!)}` : 'Non débloqué'}
+      >
+        <span className="text-2xl mb-1">{badge.emoji}</span>
+        <span className="text-xs text-center font-medium text-text truncate w-full">
+          {badge.name}
+        </span>
+        <span className="text-[10px] text-muted text-center">
+          {badge.description}
+        </span>
+        {isUnlocked && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full flex items-center justify-center">
+            <span className="text-[10px] text-white">✓</span>
+          </span>
+        )}
+      </div>
+    )
+  }
 
   // Group temptations by month
   const monthlyStats = useMemo(() => {
@@ -76,15 +118,21 @@ export function StatsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
+      {/* Header - Mobile only */}
+      <div className="lg:hidden sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
         <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-light">Statistiques</h1>
       </div>
 
-      <div className="p-4 space-y-8 max-w-md mx-auto">
+      {/* Desktop Header */}
+      <div className="hidden lg:block border-b border-muted/10 px-8 py-6">
+        <h1 className="text-2xl font-light text-text">Statistiques</h1>
+        <p className="text-muted mt-1">Ton parcours en chiffres</p>
+      </div>
+
+      <div className="p-4 lg:p-8 space-y-8 max-w-md lg:max-w-none mx-auto">
         {/* Level Hero */}
         <div className="text-center py-6">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-4">
@@ -192,6 +240,47 @@ export function StatsPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Badges Section */}
+        <div className="space-y-6">
+          <h3 className="text-sm text-muted">Badges</h3>
+
+          {/* Milestone Badges */}
+          <div>
+            <p className="text-xs text-muted mb-3 flex items-center gap-2">
+              <span>🏆</span> Jalons
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {milestoneBadges.map((badge) => (
+                <BadgeItem key={badge.id} badge={badge} />
+              ))}
+            </div>
+          </div>
+
+          {/* Streak Badges */}
+          <div>
+            <p className="text-xs text-muted mb-3 flex items-center gap-2">
+              <span>🔥</span> Streaks
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {streakBadges.map((badge) => (
+                <BadgeItem key={badge.id} badge={badge} />
+              ))}
+            </div>
+          </div>
+
+          {/* Category Badges */}
+          <div>
+            <p className="text-xs text-muted mb-3 flex items-center gap-2">
+              <span>🎯</span> Catégories
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {categoryBadges.map((badge) => (
+                <BadgeItem key={badge.id} badge={badge} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

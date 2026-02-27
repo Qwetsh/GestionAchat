@@ -191,6 +191,25 @@ export function getStats(): {
   }
 }
 
+// Get resisted count per category
+export function getCategoryResistedStats(): Record<Category, number> {
+  const temptations = getTemptations()
+  const resisted = temptations.filter((t) => t.status === 'resisted')
+
+  const stats: Record<Category, number> = {
+    cosmetics: 0,
+    books: 0,
+    stationery: 0,
+    other: 0,
+  }
+
+  resisted.forEach((t) => {
+    stats[t.category]++
+  })
+
+  return stats
+}
+
 export const CATEGORY_LABELS: Record<Category, string> = {
   cosmetics: 'Cosmétique',
   books: 'Livres',

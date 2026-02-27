@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
+import { AppShell } from '@/components/AppShell'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
@@ -69,6 +70,7 @@ function InitialRoute() {
 function App() {
   return (
     <HashRouter>
+      <AppShell>
       <Routes>
         {/* Initial route - determines where to go */}
         <Route path="/auth" element={<InitialRoute />} />
@@ -136,6 +138,7 @@ function App() {
         {/* Catch all - redirect to auth check */}
         <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
+      </AppShell>
 
       {/* Toast notifications */}
       <Toaster
