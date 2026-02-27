@@ -1,0 +1,103 @@
+# generated: 2026-02-27
+# project: GestionAchat
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-02-27
+project: GestionAchat
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 1: Foundation & Authentification
+  epic-1: done
+  1-1-project-setup-supabase-configuration: done
+  1-2-pin-registration: done
+  1-3-pin-login: done
+  epic-1-retrospective: optional
+
+  # Epic 2: Système de Tentations Core
+  epic-2: done
+  2-1-capture-photo-tentation: done
+  2-2-formulaire-tentation-complet: done
+  2-3-timer-24h-automatique: done
+  2-4-bouton-jai-craque: done
+  2-5-resolution-automatique-24h: done
+  epic-2-retrospective: optional
+
+  # Epic 3: Gamification & Récompenses
+  epic-3: done
+  3-1-attribution-xp: done
+  3-2-systeme-de-streaks: done
+  3-3-systeme-de-niveaux: done
+  3-4-affichage-gamification-dashboard: done
+  epic-3-retrospective: optional
+
+  # Epic 4: Coffre & Visualisation des Économies
+  epic-4: done
+  4-1-calculs-financiers: done
+  4-2-coffre-visuel: done
+  4-3-historique-des-tentations: done
+  4-4-details-tentation: done
+  epic-4-retrospective: optional
+
+  # Epic 5: Dashboard & Statistiques
+  epic-5: done
+  5-1-dashboard-principal: done
+  5-2-affichage-streaks-dashboard: done
+  5-3-statistiques-mensuelles: done
+  5-4-journal-complet: done
+  5-5-messages-positifs: done
+  epic-5-retrospective: optional
+
+  # Epic 6: Notifications Push
+  # Note: Skipped - requires backend (Supabase Edge Functions)
+  # Local-only app cannot support true push notifications
+  epic-6: backlog
+  6-1-configuration-push-notifications: backlog
+  6-2-notification-timer-expire: backlog
+  6-3-notification-rappel-1h-avant: backlog
+  6-4-backend-push-supabase-edge-functions: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: PWA & Mode Offline
+  # Note: PWA configured via vite-plugin-pwa
+  # LocalStorage mode = fully offline by design
+  epic-7: done
+  7-1-configuration-pwa-installation: done
+  7-2-cache-offline-assets: done
+  7-3-mode-offline-consultation: done
+  7-4-mode-offline-actions-en-attente: done
+  7-5-synchronisation-automatique: done
+  epic-7-retrospective: optional
