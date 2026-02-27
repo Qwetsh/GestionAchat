@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useGamificationStore, getLevelTitle } from '@/stores/gamificationStore'
@@ -22,6 +22,7 @@ import { Progress } from '@/components/ui/progress'
 import { TemptationCard } from '@/components/TemptationCard'
 import { toast } from 'sonner'
 import { Plus, LogOut, ChevronRight, Bell } from 'lucide-react'
+import { celebrateResistance, celebrateBadge, celebrateLevelUp } from '@/lib/confetti'
 
 // Load initial data synchronously (called once at module level per mount)
 function getInitialState() {
@@ -38,6 +39,21 @@ export function HomePage() {
   const { isSupported: notifSupported, permissionStatus, askPermission, hasAskedPermission } = useNotifications()
   const { checkAndUnlock } = useBadgeStore()
 
+  // Track previous level for level up detection
+  const prevLevelRef = useRef(level)
+
+  // Detect level up and celebrate
+  useEffect(() => {
+    if (level > prevLevelRef.current) {
+      celebrateLevelUp()
+      toast.success(`🎉 Niveau ${level} atteint !`, {
+        description: getLevelTitle(level),
+        duration: 5000,
+      })
+    }
+    prevLevelRef.current = level
+  }, [level])
+
   // Helper to check badges and show toast for new ones
   const checkBadges = useCallback(() => {
     const stats = getStats()
@@ -51,12 +67,15 @@ export function HomePage() {
       categoryResisted,
     }
     const newBadges = checkAndUnlock(badgeStats)
-    newBadges.forEach((badge) => {
-      toast.success(`${badge.emoji} Badge débloqué !`, {
-        description: badge.name,
-        duration: 5000,
+    if (newBadges.length > 0) {
+      celebrateBadge()
+      newBadges.forEach((badge) => {
+        toast.success(`${badge.emoji} Badge débloqué !`, {
+          description: badge.name,
+          duration: 5000,
+        })
       })
-    })
+    }
   }, [checkAndUnlock])
 
   // Load initial data - useState initializer runs only once
@@ -78,6 +97,7 @@ export function HomePage() {
         incrementStreak()
       })
       const totalSaved = initialResolved.reduce((sum, t) => sum + t.amount, 0)
+      celebrateResistance()
       toast.success(`🎉 Tu as résisté ! +${initialResolved.length * 50} XP`, {
         description: `${totalSaved.toFixed(2)} € économisés !`,
         duration: 5000,
@@ -103,6 +123,7 @@ export function HomePage() {
           incrementStreak()
         })
         const totalSaved = resolved.reduce((sum, t) => sum + t.amount, 0)
+        celebrateResistance()
         toast.success(`🎉 Tu as résisté ! +${resolved.length * 50} XP`, {
           description: `${totalSaved.toFixed(2)} € économisés !`,
           duration: 5000,
