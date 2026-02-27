@@ -9,12 +9,17 @@ import {
   getStats,
   type Temptation,
 } from '@/features/temptation/temptationService'
+import { useNotifications } from '@/hooks/useNotifications'
+import {
+  notifyMultipleExpired,
+  notifyTimerExpired,
+} from '@/features/notifications/notificationService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { TemptationCard } from '@/components/TemptationCard'
 import { toast } from 'sonner'
-import { Plus, LogOut, ChevronRight } from 'lucide-react'
+import { Plus, LogOut, ChevronRight, Bell } from 'lucide-react'
 
 // Load initial data synchronously (called once at module level per mount)
 function getInitialState() {
@@ -28,6 +33,7 @@ export function HomePage() {
   const navigate = useNavigate()
   const { logout } = useAuthStore()
   const { xp, level, currentStreak, addXP, incrementStreak, getLevelProgress } = useGamificationStore()
+  const { isSupported: notifSupported, permissionStatus, askPermission, hasAskedPermission } = useNotifications()
 
   // Load initial data - useState initializer runs only once
   const [initialResolved] = useState(() => {
@@ -52,6 +58,12 @@ export function HomePage() {
         description: `${totalSaved.toFixed(2)} € économisés !`,
         duration: 5000,
       })
+      // Send push notification
+      if (initialResolved.length === 1) {
+        notifyTimerExpired(initialResolved[0].amount)
+      } else {
+        notifyMultipleExpired(initialResolved.length, totalSaved)
+      }
     }
   }, [initialResolved, addXP, incrementStreak])
 
@@ -69,6 +81,12 @@ export function HomePage() {
           description: `${totalSaved.toFixed(2)} € économisés !`,
           duration: 5000,
         })
+        // Send push notification
+        if (resolved.length === 1) {
+          notifyTimerExpired(resolved[0].amount)
+        } else {
+          notifyMultipleExpired(resolved.length, totalSaved)
+        }
       }
       setTemptations(getActiveTemptations())
       const newStats = getStats()
@@ -135,6 +153,22 @@ export function HomePage() {
       </div>
 
       <div className="p-4 space-y-5 max-w-md mx-auto">
+        {/* Notification Permission Banner */}
+        {notifSupported && permissionStatus === 'default' && !hasAskedPermission && (
+          <button
+            onClick={askPermission}
+            className="w-full p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-3 hover:bg-primary/10 transition-colors"
+          >
+            <div className="p-2 bg-primary/10 rounded-full">
+              <Bell className="h-5 w-5 text-primary" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="text-sm font-medium text-text">Activer les notifications</p>
+              <p className="text-xs text-muted">Pour ne pas rater la fin de tes timers</p>
+            </div>
+          </button>
+        )}
+
         {/* Coffre Card - Clickable to history */}
         <Card
           className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20 overflow-hidden cursor-pointer hover:shadow-lg transition-all"

@@ -82,13 +82,13 @@ development_status:
   epic-5-retrospective: optional
 
   # Epic 6: Notifications Push
-  # Note: Skipped - requires backend (Supabase Edge Functions)
-  # Local-only app cannot support true push notifications
-  epic-6: backlog
-  6-1-configuration-push-notifications: backlog
-  6-2-notification-timer-expire: backlog
-  6-3-notification-rappel-1h-avant: backlog
-  6-4-backend-push-supabase-edge-functions: backlog
+  # Note: Implemented with Web Notifications API (local browser notifications)
+  # Works when app is open, sends 1h reminder and timer expired notifications
+  epic-6: done
+  6-1-configuration-push-notifications: done
+  6-2-notification-timer-expire: done
+  6-3-notification-rappel-1h-avant: done
+  6-4-backend-push-supabase-edge-functions: skipped  # Not needed for local-only app
   epic-6-retrospective: optional
 
   # Epic 7: PWA & Mode Offline
