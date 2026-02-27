@@ -11,6 +11,7 @@ import {
   type Temptation,
 } from '@/features/temptation/temptationService'
 import { useBadgeStore, type BadgeStats } from '@/stores/badgeStore'
+import { useGoalStore } from '@/stores/goalStore'
 import { useNotifications } from '@/hooks/useNotifications'
 import {
   notifyMultipleExpired,
@@ -21,7 +22,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { TemptationCard } from '@/components/TemptationCard'
 import { toast } from 'sonner'
-import { Plus, LogOut, ChevronRight, Bell } from 'lucide-react'
+import { Plus, LogOut, Bell, Target } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { celebrateResistance, celebrateBadge, celebrateLevelUp } from '@/lib/confetti'
 
 // Load initial data synchronously (called once at module level per mount)
@@ -38,6 +46,12 @@ export function HomePage() {
   const { xp, level, currentStreak, addXP, incrementStreak, getLevelProgress } = useGamificationStore()
   const { isSupported: notifSupported, permissionStatus, askPermission, hasAskedPermission } = useNotifications()
   const { checkAndUnlock } = useBadgeStore()
+  const { savingsGoal, savingsGoalReason, setSavingsGoal, getProgress } = useGoalStore()
+
+  // Goal dialog state
+  const [showGoalDialog, setShowGoalDialog] = useState(false)
+  const [goalInput, setGoalInput] = useState('')
+  const [goalReasonInput, setGoalReasonInput] = useState('')
 
   // Track previous level for level up detection
   const prevLevelRef = useRef(level)
@@ -233,7 +247,7 @@ export function HomePage() {
           >
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted mb-2">Ton coffre</p>
                   <p className="text-4xl font-light text-primary mb-1">
                     {formatAmount(stats.totalSaved)}
@@ -242,10 +256,36 @@ export function HomePage() {
                     {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} resistee{stats.resistedCount > 1 ? 's' : ''}
                   </p>
                 </div>
-                <div className="p-2 bg-primary/10 rounded-full lg:hidden">
-                  <ChevronRight className="h-5 w-5 text-primary" />
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setGoalInput(savingsGoal?.toString() || '')
+                    setGoalReasonInput(savingsGoalReason || '')
+                    setShowGoalDialog(true)
+                  }}
+                  className="p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors"
+                  title="Définir un objectif"
+                >
+                  <Target className="h-5 w-5 text-primary" />
+                </button>
               </div>
+
+              {/* Goal Progress */}
+              {savingsGoal && savingsGoal > 0 && (
+                <div className="mt-4 pt-4 border-t border-primary/10">
+                  <div className="flex justify-between text-xs text-muted mb-2">
+                    <span>
+                      {savingsGoalReason ? (
+                        <>{savingsGoalReason} • {formatAmount(savingsGoal)}</>
+                      ) : (
+                        <>Objectif: {formatAmount(savingsGoal)}</>
+                      )}
+                    </span>
+                    <span>{Math.round(getProgress(stats.totalSaved))}%</span>
+                  </div>
+                  <Progress value={getProgress(stats.totalSaved)} className="h-2" />
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -327,6 +367,69 @@ export function HomePage() {
           Nouvelle tentation
         </Button>
       </div>
+
+      {/* Goal Dialog */}
+      <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Objectif d'économie</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted">
+              Définis un objectif pour te motiver à résister !
+            </p>
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="200"
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+                className="w-full text-3xl font-light text-center bg-muted/10 border border-muted/20 rounded-xl py-4 px-4 text-text placeholder:text-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-light text-muted">€</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Pour quoi ? (ex: Voyage au Japon, Nouveau vélo...)"
+              value={goalReasonInput}
+              onChange={(e) => setGoalReasonInput(e.target.value)}
+              className="w-full text-sm bg-muted/10 border border-muted/20 rounded-xl py-3 px-4 text-text placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            {savingsGoal && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSavingsGoal(null)
+                  setShowGoalDialog(false)
+                  toast('Objectif supprimé')
+                }}
+                className="flex-1"
+              >
+                Supprimer
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                const amount = parseFloat(goalInput.replace(',', '.'))
+                if (!isNaN(amount) && amount > 0) {
+                  const reason = goalReasonInput.trim() || null
+                  setSavingsGoal(amount, reason)
+                  setShowGoalDialog(false)
+                  toast.success(`Objectif fixé à ${formatAmount(amount)} !`, {
+                    description: reason || 'Tu peux le faire !',
+                  })
+                }
+              }}
+              className="flex-1 bg-primary hover:bg-primary-deep text-white"
+            >
+              Valider
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
