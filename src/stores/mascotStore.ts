@@ -12,10 +12,13 @@ export interface CatSkin {
 
 export const CAT_SKINS: CatSkin[] = [
   { id: 'mochi', name: 'Mochi', emoji: '🍡', image: '/GestionAchat/mascot/cats/Chaton.png', gemCost: 0 }, // Free default
-  { id: 'boite', name: 'Boîte', emoji: '📦', image: '/GestionAchat/mascot/cats/ChatonCarton.png', gemCost: 15 },
-  { id: 'doudou', name: 'Doudou', emoji: '💤', image: '/GestionAchat/mascot/cats/ChatonCoussin.png', gemCost: 20 },
-  { id: 'caramel', name: 'Caramel', emoji: '🍬', image: '/GestionAchat/mascot/cats/ChatonDoupe.png', gemCost: 25 },
-  { id: 'professeur', name: 'Professeur', emoji: '🎓', image: '/GestionAchat/mascot/cats/ChatonLunette.png', gemCost: 30 },
+  { id: 'boite', name: 'Boîte', emoji: '📦', image: '/GestionAchat/mascot/cats/ChatonCarton.png', gemCost: 5 },
+  { id: 'doudou', name: 'Doudou', emoji: '💤', image: '/GestionAchat/mascot/cats/ChatonCoussin.png', gemCost: 5 },
+  { id: 'caramel', name: 'Caramel', emoji: '🍬', image: '/GestionAchat/mascot/cats/ChatonDoupe.png', gemCost: 5 },
+  { id: 'professeur', name: 'Professeur', emoji: '🎓', image: '/GestionAchat/mascot/cats/ChatonLunette.png', gemCost: 5 },
+  { id: 'dino', name: 'Dino', emoji: '🦖', image: '/GestionAchat/mascot/cats/ChatonDino.png', gemCost: 5 },
+  { id: 'mimi', name: 'Mimi', emoji: '🎀', image: '/GestionAchat/mascot/cats/Mimi.png', gemCost: 5 },
+  { id: 'musicosse', name: 'Musicosse', emoji: '🎵', image: '/GestionAchat/mascot/cats/Musicosse.png', gemCost: 5 },
 ]
 
 // Available backgrounds
@@ -23,15 +26,17 @@ export interface Background {
   id: string
   name: string
   emoji: string
+  image?: string
   gemCost: number
 }
 
 export const BACKGROUNDS: Background[] = [
   { id: 'none', name: 'Aucun', emoji: '⬜', gemCost: 0 },
-  { id: 'stars', name: 'Étoiles', emoji: '✨', gemCost: 5 },
-  { id: 'hearts', name: 'Coeurs', emoji: '💕', gemCost: 5 },
-  { id: 'sparkles', name: 'Paillettes', emoji: '💫', gemCost: 8 },
-  { id: 'rainbow', name: 'Arc-en-ciel', emoji: '🌈', gemCost: 12 },
+  { id: 'salon', name: 'Salon', emoji: '🛋️', image: '/GestionAchat/mascot/backgrounds/Salon.png', gemCost: 10 },
+  { id: 'chambre', name: 'Chambre', emoji: '🛏️', image: '/GestionAchat/mascot/backgrounds/Chambre.png', gemCost: 10 },
+  { id: 'bureau', name: 'Bureau', emoji: '💼', image: '/GestionAchat/mascot/backgrounds/Bureau.png', gemCost: 10 },
+  { id: 'jardin', name: 'Jardin', emoji: '🌳', image: '/GestionAchat/mascot/backgrounds/Jardin.png', gemCost: 10 },
+  { id: 'japon', name: 'Japon', emoji: '🗾', image: '/GestionAchat/mascot/backgrounds/Japon.png', gemCost: 15 },
 ]
 
 interface MascotState {

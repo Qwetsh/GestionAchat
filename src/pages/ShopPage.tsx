@@ -46,6 +46,14 @@ export function ShopPage() {
   const gems = getGems(stats.totalSaved)
   const vouchers = getActiveVouchers()
   const wheelChance = getWheelWinChance()
+  const isDev = window.location.hostname === 'localhost'
+
+  const handleDebugAddGems = () => {
+    // Add 10 gems by reducing spent gems (allows negative for debug)
+    const { spentGems } = useGemStore.getState()
+    useGemStore.setState({ spentGems: spentGems - 10 })
+    toast.success('+10 💎 (debug)')
+  }
 
   const [showWheelDialog, setShowWheelDialog] = useState(false)
   const [isSpinning, setIsSpinning] = useState(false)
@@ -167,9 +175,19 @@ export function ShopPage() {
             <h1 className="text-xl font-semibold text-text">Boutique</h1>
             <p className="text-sm text-muted">Dépense tes gemmes</p>
           </div>
-          <div className="ml-auto flex items-center gap-2 bg-amber-500/20 px-4 py-2 rounded-xl border border-amber-500/30">
-            <span className="text-xl">💎</span>
-            <span className="text-xl font-bold text-amber-400">{gems}</span>
+          <div className="ml-auto flex items-center gap-2">
+            {isDev && (
+              <button
+                onClick={handleDebugAddGems}
+                className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 text-sm rounded-lg border border-green-500/30 transition-colors"
+              >
+                +10 💎
+              </button>
+            )}
+            <div className="flex items-center gap-2 bg-amber-500/20 px-4 py-2 rounded-xl border border-amber-500/30">
+              <span className="text-xl">💎</span>
+              <span className="text-xl font-bold text-amber-400">{gems}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -204,9 +222,9 @@ export function ShopPage() {
         {activeTab === 'mascot' ? (
           <>
             {/* Mascot Preview */}
-            <Card className="text-center">
+            <Card className="text-center overflow-hidden">
               <CardContent className="py-8">
-                <CatMascot size="lg" className="mx-auto mb-4" />
+                <CatMascot size="xl" className="mx-auto mb-4" />
                 <p className="text-lg font-semibold text-text">
                   {CAT_SKINS.find(c => c.id === selectedCat)?.name}
                 </p>
@@ -267,9 +285,9 @@ export function ShopPage() {
             {/* Backgrounds */}
             <div>
               <h3 className="text-lg font-semibold text-text mb-3 flex items-center gap-2">
-                ✨ Fonds
+                ✨ Décors
               </h3>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {BACKGROUNDS.map((bg) => {
                   const unlocked = isBackgroundUnlocked(bg.id)
                   const isSelected = selectedBackground === bg.id
@@ -279,26 +297,39 @@ export function ShopPage() {
                     <Card
                       key={bg.id}
                       className={cn(
-                        'cursor-pointer transition-all',
+                        'cursor-pointer transition-all overflow-hidden',
                         isSelected && 'ring-2 ring-primary',
                         !unlocked && !canAfford && 'opacity-50'
                       )}
                       onClick={() => handleBackgroundClick(bg.id, bg.gemCost)}
                     >
-                      <CardContent className="p-3 text-center">
-                        <span className="text-2xl">{bg.emoji}</span>
-                        <p className="text-xs font-medium text-text mt-1">
-                          {bg.name}
-                        </p>
-                        {unlocked ? (
-                          <p className="text-xs text-success mt-1">
-                            {isSelected ? '✓' : ''}
-                          </p>
-                        ) : bg.gemCost > 0 ? (
-                          <p className="text-xs text-amber-400 mt-1">
-                            💎 {bg.gemCost}
-                          </p>
-                        ) : null}
+                      <CardContent className="p-0">
+                        {bg.image ? (
+                          <div className="relative">
+                            <img
+                              src={bg.image}
+                              alt={bg.name}
+                              className="w-full h-24 object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <p className="text-xs font-medium text-white">
+                                {bg.emoji} {bg.name}
+                              </p>
+                              {unlocked ? (
+                                isSelected && <span className="text-xs text-success">✓</span>
+                              ) : (
+                                <p className="text-xs text-amber-400">💎 {bg.gemCost}</p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center h-24 flex flex-col items-center justify-center">
+                            <span className="text-2xl">{bg.emoji}</span>
+                            <p className="text-xs font-medium text-text mt-1">{bg.name}</p>
+                            {isSelected && <span className="text-xs text-success">✓</span>}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )
