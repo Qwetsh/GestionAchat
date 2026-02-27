@@ -58,9 +58,9 @@ export function TemptationCard({ temptation, onCrack, compact = false }: Temptat
     <>
       <Card
         className={cn(
-          'overflow-hidden transition-all cursor-pointer hover:shadow-md',
-          isResisted && 'border-success/50 bg-success/5',
-          isCracked && 'border-warning/50 bg-warning/5 opacity-75'
+          'overflow-hidden transition-all cursor-pointer hover:shadow-lg border-muted/30',
+          isResisted && 'border-success/30 bg-success/5',
+          isCracked && 'border-warning/30 bg-warning/5 opacity-60'
         )}
         onClick={() => navigate(`/temptation/${temptation.id}`)}
       >
@@ -70,7 +70,7 @@ export function TemptationCard({ temptation, onCrack, compact = false }: Temptat
             {temptation.photoUrl ? (
               <div
                 className={cn(
-                  'flex-shrink-0 rounded-lg overflow-hidden bg-muted',
+                  'flex-shrink-0 rounded-xl overflow-hidden bg-muted/30',
                   compact ? 'w-16 h-16' : 'w-20 h-20'
                 )}
               >
@@ -83,7 +83,7 @@ export function TemptationCard({ temptation, onCrack, compact = false }: Temptat
             ) : (
               <div
                 className={cn(
-                  'flex-shrink-0 rounded-lg bg-muted/50 flex items-center justify-center',
+                  'flex-shrink-0 rounded-xl bg-primary/5 flex items-center justify-center',
                   compact ? 'w-16 h-16' : 'w-20 h-20'
                 )}
               >

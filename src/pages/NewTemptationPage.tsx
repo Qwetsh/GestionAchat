@@ -1,8 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import {
   createTemptation,
   type Category,
@@ -30,7 +28,6 @@ export function NewTemptationPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Compress image if needed (max 500KB)
     const compressed = await compressImage(file, 500 * 1024)
     setPhotoUrl(compressed)
   }
@@ -45,7 +42,6 @@ export function NewTemptationPage() {
           let width = img.width
           let height = img.height
 
-          // Max dimensions
           const MAX_DIM = 800
           if (width > MAX_DIM || height > MAX_DIM) {
             if (width > height) {
@@ -63,7 +59,6 @@ export function NewTemptationPage() {
           const ctx = canvas.getContext('2d')!
           ctx.drawImage(img, 0, 0, width, height)
 
-          // Start with high quality and reduce if needed
           let quality = 0.8
           let result = canvas.toDataURL('image/jpeg', quality)
 
@@ -98,17 +93,16 @@ export function NewTemptationPage() {
         category,
       })
 
-      // Add XP for logging a temptation
       addXP(15)
 
-      toast.success('+15 XP ! Timer 24h lancé ⏱️', {
+      toast.success('+15 XP ! Timer 24h lance', {
         description: 'Tu peux le faire !',
       })
 
       navigate('/')
     } catch (error) {
       console.error('Error creating temptation:', error)
-      toast.error('Erreur lors de la création')
+      toast.error('Erreur lors de la creation')
     } finally {
       setIsSubmitting(false)
     }
@@ -119,136 +113,128 @@ export function NewTemptationPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold">Nouvelle tentation</h1>
+        <h1 className="text-lg font-light">Nouvelle tentation</h1>
       </div>
 
-      <div className="p-4 space-y-6 max-w-md mx-auto">
+      <div className="p-6 space-y-10 max-w-md mx-auto">
         {/* Photo Section */}
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-muted mb-3">
-              Photo (optionnel)
-            </p>
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoCapture}
+            className="hidden"
+          />
 
-            {photoUrl ? (
-              <div className="relative">
-                <img
-                  src={photoUrl}
-                  alt="Tentation"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 rounded-full"
-                  onClick={() => setPhotoUrl(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhotoCapture}
-                  className="hidden"
-                />
-                <Button
-                  variant="outline"
-                  className="flex-1 h-24 flex-col gap-2"
-                  onClick={() => {
-                    if (fileInputRef.current) {
-                      fileInputRef.current.capture = 'environment'
-                      fileInputRef.current.click()
-                    }
-                  }}
-                >
-                  <Camera className="h-6 w-6" />
-                  <span className="text-xs">Appareil photo</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 h-24 flex-col gap-2"
-                  onClick={() => {
-                    if (fileInputRef.current) {
-                      fileInputRef.current.removeAttribute('capture')
-                      fileInputRef.current.click()
-                    }
-                  }}
-                >
-                  <ImagePlus className="h-6 w-6" />
-                  <span className="text-xs">Galerie</span>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {photoUrl ? (
+            <div className="relative">
+              <img
+                src={photoUrl}
+                alt="Tentation"
+                className="w-full h-52 object-cover rounded-2xl"
+              />
+              <button
+                onClick={() => setPhotoUrl(null)}
+                className="absolute top-3 right-3 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.capture = 'environment'
+                    fileInputRef.current.click()
+                  }
+                }}
+                className="flex-1 h-32 rounded-2xl border-2 border-dashed border-muted/30 flex flex-col items-center justify-center gap-2 text-muted hover:border-primary/50 hover:text-primary transition-colors"
+              >
+                <Camera className="h-6 w-6" />
+                <span className="text-xs">Photo</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.removeAttribute('capture')
+                    fileInputRef.current.click()
+                  }
+                }}
+                className="flex-1 h-32 rounded-2xl border-2 border-dashed border-muted/30 flex flex-col items-center justify-center gap-2 text-muted hover:border-primary/50 hover:text-primary transition-colors"
+              >
+                <ImagePlus className="h-6 w-6" />
+                <span className="text-xs">Galerie</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Amount Section */}
-        <Card>
-          <CardContent className="p-4">
-            <label className="text-sm font-medium text-muted mb-3 block">
-              Montant *
-            </label>
-            <div className="relative">
-              <Input
-                type="text"
-                inputMode="decimal"
-                placeholder="34,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-2xl font-bold h-14 pr-10"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl text-muted">
-                €
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <p className="text-sm text-muted mb-4">Combien ca coute ?</p>
+          <div className="relative inline-block">
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-48 text-5xl font-light text-center bg-transparent border-none outline-none text-text placeholder:text-muted/30"
+            />
+            <span className="absolute -right-8 top-1/2 -translate-y-1/2 text-3xl font-light text-muted">€</span>
+          </div>
+        </div>
 
         {/* Category Section */}
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-muted mb-3">Catégorie *</p>
-            <div className="grid grid-cols-2 gap-2">
-              {CATEGORIES.map((cat) => (
-                <Button
-                  key={cat}
-                  variant={category === cat ? 'default' : 'outline'}
-                  className={cn(
-                    'h-14 flex-col gap-1',
-                    category === cat && 'bg-primary text-white'
-                  )}
-                  onClick={() => setCategory(cat)}
-                >
-                  <span className="text-lg">{CATEGORY_EMOJIS[cat]}</span>
-                  <span className="text-xs">{CATEGORY_LABELS[cat]}</span>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div>
+          <p className="text-sm text-muted mb-4 text-center">C'est quoi ?</p>
+          <div className="grid grid-cols-4 gap-2">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={cn(
+                  'py-4 rounded-2xl flex flex-col items-center gap-2 transition-all',
+                  category === cat
+                    ? 'bg-primary/10 ring-2 ring-primary'
+                    : 'bg-muted/5 hover:bg-muted/10'
+                )}
+              >
+                <span className="text-2xl">{CATEGORY_EMOJIS[cat]}</span>
+                <span className={cn(
+                  'text-xs',
+                  category === cat ? 'text-primary font-medium' : 'text-muted'
+                )}>
+                  {CATEGORY_LABELS[cat]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* Submit Button */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!isValid || isSubmitting}
-          className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white"
-        >
-          {isSubmitting ? 'Création...' : 'Lancer le timer 24h ⏱️'}
-        </Button>
+        {/* Submit Section */}
+        <div className="pt-4">
+          <Button
+            onClick={handleSubmit}
+            disabled={!isValid || isSubmitting}
+            className="w-full h-14 text-lg font-light bg-primary hover:bg-primary-deep text-white rounded-2xl shadow-xl shadow-primary/20 transition-all disabled:opacity-40 disabled:shadow-none"
+          >
+            {isSubmitting ? 'Creation...' : 'Lancer le timer'}
+          </Button>
 
-        <p className="text-center text-sm text-muted">
-          Tu recevras <span className="font-bold text-accent">+15 XP</span> maintenant
-          et <span className="font-bold text-success">+50 XP</span> si tu résistes !
-        </p>
+          <p className="text-center text-xs text-muted mt-4">
+            <span className="text-primary">+15 XP</span> maintenant
+            {' '}&bull;{' '}
+            <span className="text-success">+50 XP</span> si tu resistes 24h
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   getTemptationById,
   getTimeRemaining,
@@ -11,8 +10,7 @@ import {
 import { TimerCircle } from '@/components/TimerCircle'
 import { useGamificationStore } from '@/stores/gamificationStore'
 import { toast } from 'sonner'
-import { ArrowLeft, Calendar, Tag, Euro, Clock, CheckCircle, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { ArrowLeft } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -33,14 +31,17 @@ export function TemptationDetailPage() {
 
   if (!temptation) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-4xl mb-3">404</p>
-            <p className="text-muted mb-4">Tentation non trouvee</p>
-            <Button onClick={() => navigate('/')}>Retour</Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="text-center">
+          <p className="text-6xl mb-4">🔍</p>
+          <p className="text-muted mb-6">Tentation introuvable</p>
+          <Button
+            onClick={() => navigate('/')}
+            className="bg-primary hover:bg-primary-deep text-white rounded-xl"
+          >
+            Retour
+          </Button>
+        </div>
       </div>
     )
   }
@@ -48,7 +49,6 @@ export function TemptationDetailPage() {
   const remaining = getTimeRemaining(temptation)
   const isActive = temptation.status === 'active'
   const isResisted = temptation.status === 'resisted'
-  const isCracked = temptation.status === 'cracked'
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -62,7 +62,6 @@ export function TemptationDetailPage() {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     })
@@ -82,176 +81,144 @@ export function TemptationDetailPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background pb-6">
+      <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold">Details</h1>
+          <h1 className="text-lg font-light">Details</h1>
         </div>
 
-        <div className="p-4 space-y-4 max-w-md mx-auto">
-          {/* Photo */}
-          {temptation.photoUrl && (
-            <Card className="overflow-hidden">
+        <div className="max-w-md mx-auto">
+          {/* Photo Hero */}
+          {temptation.photoUrl ? (
+            <div className="relative">
               <img
                 src={temptation.photoUrl}
                 alt="Tentation"
-                className="w-full h-64 object-cover"
+                className="w-full h-72 object-cover"
               />
-            </Card>
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+            </div>
+          ) : (
+            <div className="h-40 flex items-center justify-center bg-primary/5">
+              <span className="text-6xl">{CATEGORY_EMOJIS[temptation.category]}</span>
+            </div>
           )}
 
-          {/* Status & Timer */}
-          <Card
-            className={cn(
-              'overflow-hidden',
-              isResisted && 'border-success/50 bg-success/5',
-              isCracked && 'border-warning/50 bg-warning/5'
-            )}
-          >
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  {isActive ? (
+          <div className="p-6 space-y-8 -mt-8 relative">
+            {/* Amount Card */}
+            <div className="bg-surface rounded-2xl p-6 shadow-xl shadow-primary/5 border border-muted/10">
+              <div className="text-center">
+                <p className="text-4xl font-light text-primary mb-1">
+                  {formatAmount(temptation.amount)}
+                </p>
+                <p className="text-sm text-muted">
+                  {CATEGORY_EMOJIS[temptation.category]} {CATEGORY_LABELS[temptation.category]}
+                </p>
+              </div>
+            </div>
+
+            {/* Timer / Status */}
+            <div className="text-center py-4">
+              {isActive ? (
+                <>
+                  <p className="text-sm text-muted mb-4">Temps restant</p>
+                  <TimerCircle remaining={remaining} size="lg" />
+                  <p className="text-xs text-muted mt-4">
+                    Tiens bon, tu y es presque
+                  </p>
+                </>
+              ) : (
+                <div className="py-4">
+                  {isResisted ? (
                     <>
-                      <p className="text-sm text-muted mb-1">Temps restant</p>
-                      <TimerCircle remaining={remaining} size="lg" />
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-4">
+                        <span className="text-3xl">✓</span>
+                      </div>
+                      <p className="text-xl font-light text-success">Resiste</p>
+                      <p className="text-sm text-muted mt-1">Bravo, tu as tenu !</p>
                     </>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      {isResisted ? (
-                        <>
-                          <CheckCircle className="h-8 w-8 text-success" />
-                          <div>
-                            <p className="font-bold text-success">Resiste !</p>
-                            <p className="text-sm text-muted">Bravo, tu as tenu !</p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-8 w-8 text-warning" />
-                          <div>
-                            <p className="font-bold text-warning">Craque</p>
-                            <p className="text-sm text-muted">Ce n'est pas grave !</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <>
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-warning/10 mb-4">
+                        <span className="text-3xl">✗</span>
+                      </div>
+                      <p className="text-xl font-light text-warning">Craque</p>
+                      <p className="text-sm text-muted mt-1">Ce n'est pas grave</p>
+                    </>
                   )}
                 </div>
-                {isActive && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowConfirm(true)}
-                    className="text-warning border-warning hover:bg-warning/10"
-                  >
-                    J'ai craque
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
 
-          {/* Details */}
-          <Card>
-            <CardContent className="p-5 space-y-4">
-              {/* Amount */}
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Euro className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted">Montant</p>
-                  <p className="text-2xl font-bold">{formatAmount(temptation.amount)}</p>
-                </div>
+            {/* Dates */}
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between py-3 border-b border-muted/10">
+                <span className="text-muted">Cree le</span>
+                <span>{formatDate(temptation.createdAt)}</span>
               </div>
-
-              {/* Category */}
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-accent/10 rounded-lg">
-                  <Tag className="h-5 w-5 text-accent" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted">Categorie</p>
-                  <p className="font-medium">
-                    {CATEGORY_EMOJIS[temptation.category]} {CATEGORY_LABELS[temptation.category]}
-                  </p>
-                </div>
-              </div>
-
-              {/* Created Date */}
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-muted/30 rounded-lg">
-                  <Calendar className="h-5 w-5 text-muted" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted">Cree le</p>
-                  <p className="font-medium">{formatDate(temptation.createdAt)}</p>
-                </div>
-              </div>
-
-              {/* Resolved Date */}
               {temptation.resolvedAt && (
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    'p-2 rounded-lg',
-                    isResisted ? 'bg-success/10' : 'bg-warning/10'
-                  )}>
-                    <Clock className={cn(
-                      'h-5 w-5',
-                      isResisted ? 'text-success' : 'text-warning'
-                    )} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted">
-                      {isResisted ? 'Resiste le' : 'Craque le'}
-                    </p>
-                    <p className="font-medium">{formatDate(temptation.resolvedAt)}</p>
-                  </div>
+                <div className="flex justify-between py-3">
+                  <span className="text-muted">{isResisted ? 'Resiste le' : 'Craque le'}</span>
+                  <span>{formatDate(temptation.resolvedAt)}</span>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Motivation */}
-          {isActive && (
-            <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-              <CardContent className="p-5 text-center">
-                <p className="text-4xl mb-2">💪</p>
-                <p className="font-medium text-text">Tu peux le faire !</p>
-                <p className="text-sm text-muted mt-1">
-                  Chaque minute qui passe te rapproche de la victoire.
+            {/* Action Button */}
+            {isActive && (
+              <div className="pt-4">
+                <Button
+                  onClick={() => setShowConfirm(true)}
+                  variant="outline"
+                  className="w-full h-12 rounded-xl border-warning/30 text-warning hover:bg-warning/5"
+                >
+                  J'ai craque
+                </Button>
+                <p className="text-center text-xs text-muted mt-3">
+                  +5 XP pour la conscience
                 </p>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
+
+            {/* Motivation */}
+            {isActive && (
+              <div className="text-center py-6 bg-primary/5 rounded-2xl">
+                <p className="text-2xl mb-2">💜</p>
+                <p className="text-sm text-muted">
+                  Chaque minute compte.<br />
+                  Tu es plus forte que cette envie.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Tu es sure ?</DialogTitle>
-            <DialogDescription>
-              Ce n'est pas grave de craquer parfois. L'important c'est d'en etre consciente !
+            <DialogTitle className="font-light text-xl">Tu es sure ?</DialogTitle>
+            <DialogDescription className="text-muted">
+              Ce n'est pas grave de craquer parfois. L'important c'est d'en etre consciente.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex-row gap-2">
+          <DialogFooter className="flex-row gap-3 mt-4">
             <Button
               variant="outline"
               onClick={() => setShowConfirm(false)}
-              className="flex-1"
+              className="flex-1 h-12 rounded-xl"
             >
               Annuler
             </Button>
             <Button
               onClick={handleCrack}
-              className="flex-1 bg-warning hover:bg-warning/90 text-white"
+              className="flex-1 h-12 rounded-xl bg-warning hover:bg-warning/90 text-white"
             >
-              Oui, j'ai craque
+              Confirmer
             </Button>
           </DialogFooter>
         </DialogContent>

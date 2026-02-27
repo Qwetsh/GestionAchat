@@ -1,15 +1,13 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   getAllTemptations,
   getStats,
   type Temptation,
 } from '@/features/temptation/temptationService'
 import { useGamificationStore, getLevelTitle } from '@/stores/gamificationStore'
-import { ArrowLeft, TrendingUp, TrendingDown, Award, Target } from 'lucide-react'
-import { Progress } from '@/components/ui/progress'
+import { ArrowLeft } from 'lucide-react'
 
 interface MonthlyStats {
   month: string
@@ -23,7 +21,7 @@ interface MonthlyStats {
 
 export function StatsPage() {
   const navigate = useNavigate()
-  const { xp, level, bestStreak, getLevelProgress, getNextLevelXP } = useGamificationStore()
+  const { xp, level, bestStreak, currentStreak, getLevelProgress, getNextLevelXP } = useGamificationStore()
   const temptations = useMemo(() => getAllTemptations(), [])
   const stats = useMemo(() => getStats(), [])
 
@@ -72,174 +70,125 @@ export function StatsPage() {
     }).format(amount)
   }
 
-  const getSuccessRate = (resisted: number, cracked: number) => {
-    const total = resisted + cracked
-    if (total === 0) return 0
-    return Math.round((resisted / total) * 100)
-  }
+  const successRate = stats.resistedCount + stats.crackedCount > 0
+    ? Math.round((stats.resistedCount / (stats.resistedCount + stats.crackedCount)) * 100)
+    : 0
 
   return (
     <div className="min-h-screen bg-background pb-6">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4 flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold">Statistiques</h1>
+        <h1 className="text-lg font-light">Statistiques</h1>
       </div>
 
-      <div className="p-4 space-y-4 max-w-md mx-auto">
-        {/* Overall Performance */}
-        <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-primary/20 rounded-full">
-                <Award className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted">Niveau {level}</p>
-                <p className="font-bold text-lg">{getLevelTitle(level)}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted">{xp} XP</span>
-                <span className="text-muted">{getNextLevelXP()} XP</span>
-              </div>
-              <Progress value={getLevelProgress() * 100} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="p-4 space-y-8 max-w-md mx-auto">
+        {/* Level Hero */}
+        <div className="text-center py-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-4">
+            <span className="text-3xl">✨</span>
+          </div>
+          <p className="text-sm text-muted mb-1">Niveau {level}</p>
+          <p className="text-2xl font-light text-text mb-4">{getLevelTitle(level)}</p>
 
-        {/* Key Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Target className="h-6 w-6 text-success mx-auto mb-2" />
-              <p className="text-3xl font-bold text-success">
-                {getSuccessRate(stats.resistedCount, stats.crackedCount)}%
-              </p>
-              <p className="text-xs text-muted">Taux de reussite</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-3xl mb-1">🔥</p>
-              <p className="text-2xl font-bold text-primary">{bestStreak}</p>
-              <p className="text-xs text-muted">Meilleur streak</p>
-            </CardContent>
-          </Card>
+          {/* XP Progress */}
+          <div className="max-w-xs mx-auto">
+            <div className="flex justify-between text-xs text-muted mb-2">
+              <span>{xp} XP</span>
+              <span>{getNextLevelXP()} XP</span>
+            </div>
+            <div className="h-2 bg-muted/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-primary-deep rounded-full transition-all duration-500"
+                style={{ width: `${getLevelProgress() * 100}%` }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Total Summary */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-bold mb-3">Resume global</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-success" />
-                  <span className="text-sm">Total economise</span>
-                </div>
-                <span className="font-bold text-success">
-                  {formatAmount(stats.totalSaved)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-warning" />
-                  <span className="text-sm">Total depense</span>
-                </div>
-                <span className="font-bold text-warning">
-                  {formatAmount(stats.totalCracked)}
-                </span>
-              </div>
-              <div className="border-t pt-3 flex justify-between items-center">
-                <span className="text-sm font-medium">Bilan net</span>
-                <span
-                  className={`font-bold ${
-                    stats.totalSaved - stats.totalCracked >= 0
-                      ? 'text-success'
-                      : 'text-warning'
-                  }`}
-                >
-                  {formatAmount(stats.totalSaved - stats.totalCracked)}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <p className="text-3xl font-light text-primary">{successRate}%</p>
+            <p className="text-xs text-muted mt-1">reussite</p>
+          </div>
+          <div className="text-center border-x border-muted/10">
+            <p className="text-3xl font-light text-text">{currentStreak}</p>
+            <p className="text-xs text-muted mt-1">streak 🔥</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl font-light text-primary">{bestStreak}</p>
+            <p className="text-xs text-muted mt-1">record</p>
+          </div>
+        </div>
+
+        {/* Financial Summary */}
+        <div className="bg-muted/5 rounded-2xl p-6 space-y-4">
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm text-muted">Economise</span>
+            <span className="text-2xl font-light text-success">{formatAmount(stats.totalSaved)}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm text-muted">Depense</span>
+            <span className="text-xl font-light text-warning">{formatAmount(stats.totalCracked)}</span>
+          </div>
+          <div className="border-t border-muted/10 pt-4 flex justify-between items-baseline">
+            <span className="text-sm font-medium">Bilan</span>
+            <span className={`text-2xl font-light ${
+              stats.totalSaved - stats.totalCracked >= 0 ? 'text-success' : 'text-warning'
+            }`}>
+              {stats.totalSaved - stats.totalCracked >= 0 ? '+' : ''}{formatAmount(stats.totalSaved - stats.totalCracked)}
+            </span>
+          </div>
+        </div>
 
         {/* Monthly Breakdown */}
         <div>
-          <h3 className="font-bold mb-3">Par mois</h3>
+          <h3 className="text-sm text-muted mb-4">Par mois</h3>
+
           {monthlyStats.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-4xl mb-3">📊</p>
-                <p className="text-muted">Pas encore de donnees</p>
-              </CardContent>
-            </Card>
+            <div className="text-center py-12">
+              <p className="text-4xl mb-4">📊</p>
+              <p className="text-muted">Pas encore de donnees</p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {monthlyStats.map((month) => (
-                <Card key={month.monthKey}>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">{month.month}</h4>
-                      <span className="text-xs px-2 py-1 bg-muted/30 rounded-full">
-                        {month.total} tentation{month.total > 1 ? 's' : ''}
-                      </span>
-                    </div>
+                <div key={month.monthKey} className="bg-surface rounded-xl p-4 border border-muted/10">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-medium">{month.month}</span>
+                    <span className="text-xs text-muted">{month.total} tentation{month.total > 1 ? 's' : ''}</span>
+                  </div>
 
-                    {/* Progress bar */}
-                    <div className="h-2 bg-muted/30 rounded-full overflow-hidden mb-3">
-                      <div className="h-full flex">
-                        <div
-                          className="bg-success"
-                          style={{
-                            width: `${
-                              month.total > 0
-                                ? (month.resisted / month.total) * 100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                        <div
-                          className="bg-warning"
-                          style={{
-                            width: `${
-                              month.total > 0
-                                ? (month.cracked / month.total) * 100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
+                  {/* Mini progress bar */}
+                  <div className="h-1.5 bg-muted/10 rounded-full overflow-hidden mb-3">
+                    <div className="h-full flex">
+                      <div
+                        className="bg-success rounded-l-full"
+                        style={{ width: `${month.total > 0 ? (month.resisted / month.total) * 100 : 0}%` }}
+                      />
+                      <div
+                        className="bg-warning rounded-r-full"
+                        style={{ width: `${month.total > 0 ? (month.cracked / month.total) * 100 : 0}%` }}
+                      />
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <div className="flex items-center gap-1 text-success">
-                          <div className="w-2 h-2 rounded-full bg-success" />
-                          <span>{month.resisted} resistees</span>
-                        </div>
-                        <p className="text-xs text-muted ml-3">
-                          {formatAmount(month.savedAmount)}
-                        </p>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1 text-warning">
-                          <div className="w-2 h-2 rounded-full bg-warning" />
-                          <span>{month.cracked} craquees</span>
-                        </div>
-                        <p className="text-xs text-muted ml-3">
-                          {formatAmount(month.crackedAmount)}
-                        </p>
-                      </div>
+                  <div className="flex justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-success" />
+                      <span className="text-muted">{month.resisted}</span>
+                      <span className="text-success font-medium">{formatAmount(month.savedAmount)}</span>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-warning" />
+                      <span className="text-muted">{month.cracked}</span>
+                      <span className="text-warning font-medium">{formatAmount(month.crackedAmount)}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}

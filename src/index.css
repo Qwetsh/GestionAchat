@@ -1,22 +1,38 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #F97316;
-  --color-primary-soft: #FED7AA;
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-accent: #EAB308;
-  --color-background: #FFFBF8;
+  /* Serene Violet - Minimalist Zen */
+  --color-primary: #8B5CF6;
+  --color-primary-soft: #DDD6FE;
+  --color-primary-deep: #7C3AED;
+  --color-success: #6B9080;
+  --color-warning: #E07A5F;
+  --color-accent: #A78BFA;
+  --color-background: #FAFAFA;
   --color-surface: #FFFFFF;
-  --color-text: #1C1917;
-  --color-muted: #78716C;
-  --radius-default: 0.75rem;
+  --color-text: #3F3F46;
+  --color-muted: #A1A1AA;
+  --radius-default: 1rem;
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--color-background);
   color: var(--color-text);
   margin: 0;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle shadows for cards */
+.card-zen {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }

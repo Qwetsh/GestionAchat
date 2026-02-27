@@ -116,40 +116,44 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b px-4 py-3">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4">
         <div className="flex items-center justify-between max-w-md mx-auto">
-          <h1 className="text-xl font-bold text-text">GestionAchat</h1>
-          <div className="flex items-center gap-2">
+          <h1 className="text-xl font-light tracking-tight text-text">
+            <span className="font-medium text-primary">Gestion</span>Achat
+          </h1>
+          <div className="flex items-center gap-3">
             {currentStreak > 0 && (
-              <span className="text-sm font-bold text-primary">
+              <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
                 {currentStreak} 🔥
               </span>
             )}
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-4 max-w-md mx-auto">
+      <div className="p-4 space-y-5 max-w-md mx-auto">
         {/* Coffre Card - Clickable to history */}
         <Card
-          className="bg-gradient-to-br from-primary to-primary/80 text-white overflow-hidden cursor-pointer hover:from-primary/90 hover:to-primary/70 transition-colors"
+          className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
           onClick={() => navigate('/history')}
         >
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm opacity-90 mb-1">Ton coffre</p>
-                <p className="text-4xl font-bold mb-1">
+                <p className="text-sm text-muted mb-2">Ton coffre</p>
+                <p className="text-4xl font-light text-primary mb-1">
                   {formatAmount(stats.totalSaved)}
                 </p>
-                <p className="text-sm opacity-80">
+                <p className="text-sm text-muted">
                   {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} resistee{stats.resistedCount > 1 ? 's' : ''}
                 </p>
               </div>
-              <ChevronRight className="h-5 w-5 opacity-70" />
+              <div className="p-2 bg-primary/10 rounded-full">
+                <ChevronRight className="h-5 w-5 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -220,7 +224,7 @@ export function HomePage() {
       <div className="fixed bottom-6 left-0 right-0 flex justify-center">
         <Button
           onClick={() => navigate('/new')}
-          className="h-14 px-6 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg"
+          className="h-14 px-8 rounded-full bg-primary hover:bg-primary-deep text-white shadow-xl shadow-primary/25 transition-all hover:scale-105"
         >
           <Plus className="h-5 w-5 mr-2" />
           Nouvelle tentation
