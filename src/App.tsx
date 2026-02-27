@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { RegisterPage } from '@/pages/RegisterPage'
@@ -68,7 +68,7 @@ function InitialRoute() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* Initial route - determines where to go */}
         <Route path="/auth" element={<InitialRoute />} />
@@ -147,7 +147,7 @@ function App() {
           },
         }}
       />
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
