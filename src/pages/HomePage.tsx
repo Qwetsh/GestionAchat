@@ -12,6 +12,9 @@ import {
 } from '@/features/temptation/temptationService'
 import { useBadgeStore, type BadgeStats } from '@/stores/badgeStore'
 import { useGoalStore } from '@/stores/goalStore'
+import { useGemStore } from '@/stores/gemStore'
+// Mascot is imported directly in the component
+import { CatMascot } from '@/components/CatMascot'
 import { useNotifications } from '@/hooks/useNotifications'
 import {
   notifyMultipleExpired,
@@ -22,7 +25,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { TemptationCard } from '@/components/TemptationCard'
 import { toast } from 'sonner'
-import { Plus, LogOut, Bell, Target } from 'lucide-react'
+import { Plus, LogOut, Bell, Target, Gem } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -47,6 +50,7 @@ export function HomePage() {
   const { isSupported: notifSupported, permissionStatus, askPermission, hasAskedPermission } = useNotifications()
   const { checkAndUnlock } = useBadgeStore()
   const { savingsGoal, savingsGoalReason, setSavingsGoal, getProgress } = useGoalStore()
+  const { getGems, getActiveVouchers } = useGemStore()
 
   // Goal dialog state
   const [showGoalDialog, setShowGoalDialog] = useState(false)
@@ -195,20 +199,23 @@ export function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 lg:pb-8">
+    <div className="min-h-screen pb-24 lg:pb-8">
       {/* Header - Mobile only */}
-      <div className="lg:hidden sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-muted/20 px-4 py-4">
+      <div className="lg:hidden sticky top-0 z-10 bg-background/60 backdrop-blur-xl border-b border-primary/10 px-4 py-3">
         <div className="flex items-center justify-between max-w-md mx-auto">
-          <h1 className="text-xl font-light tracking-tight text-text">
-            <span className="font-medium text-primary">Gestion</span>Achat
-          </h1>
+          <div className="flex items-center gap-3">
+            <CatMascot size="sm" />
+            <h1 className="text-xl font-light tracking-tight text-text">
+              <span className="font-semibold text-primary">Gestion</span>Achat
+            </h1>
+          </div>
           <div className="flex items-center gap-3">
             {currentStreak > 0 && (
-              <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+              <span className="text-sm font-medium text-primary bg-primary/20 px-3 py-1 rounded-full border border-primary/30">
                 {currentStreak} 🔥
               </span>
             )}
-            <Button variant="ghost" size="icon" className="text-muted hover:text-text" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" className="text-muted hover:text-text hover:bg-white/5" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -216,9 +223,9 @@ export function HomePage() {
       </div>
 
       {/* Desktop Header */}
-      <div className="hidden lg:block border-b border-muted/10 px-8 py-6">
+      <div className="hidden lg:block border-b border-primary/10 px-8 py-6 bg-background/40 backdrop-blur-sm">
         <h1 className="text-2xl font-light text-text">Tableau de bord</h1>
-        <p className="text-muted mt-1">Bienvenue, prête à résister ?</p>
+        <p className="text-muted mt-1">Bienvenue, prêt·e à résister ?</p>
       </div>
 
       <div className="p-4 lg:p-8 space-y-5 lg:space-y-6 max-w-md lg:max-w-none mx-auto">
@@ -226,9 +233,9 @@ export function HomePage() {
         {notifSupported && permissionStatus === 'default' && !hasAskedPermission && (
           <button
             onClick={askPermission}
-            className="w-full p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-3 hover:bg-primary/10 transition-colors"
+            className="w-full p-4 glass-card rounded-2xl flex items-center gap-3 hover:bg-white/10 transition-all border-primary/30"
           >
-            <div className="p-2 bg-primary/10 rounded-full">
+            <div className="p-2.5 bg-primary/20 rounded-xl">
               <Bell className="h-5 w-5 text-primary" />
             </div>
             <div className="text-left flex-1">
@@ -238,22 +245,27 @@ export function HomePage() {
           </button>
         )}
 
-        {/* Stats Grid - Desktop: 3 cols, Mobile: stacked */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-          {/* Coffre Card - Clickable to history */}
-          <Card
-            className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+        {/* Stats Grid - Desktop: 4 cols, Mobile: stacked */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-5">
+          {/* Coffre Card - Premium Style */}
+          <div
+            className="coffre-premium rounded-2xl cursor-pointer hover:scale-[1.02] transition-all duration-300"
             onClick={() => navigate('/history')}
           >
-            <CardContent className="p-6">
+            <div className="p-6 relative z-10">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <p className="text-sm text-muted mb-2">Ton coffre</p>
-                  <p className="text-4xl font-light text-primary mb-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 bg-primary/20 rounded-xl">
+                      <Gem className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted font-medium">Ton coffre</p>
+                  </div>
+                  <p className="text-4xl font-bold text-text mb-1 tracking-tight">
                     {formatAmount(stats.totalSaved)}
                   </p>
-                  <p className="text-sm text-muted">
-                    {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} resistee{stats.resistedCount > 1 ? 's' : ''}
+                  <p className="text-sm text-primary/80">
+                    {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} résistée{stats.resistedCount > 1 ? 's' : ''} 💪
                   </p>
                 </div>
                 <button
@@ -263,7 +275,7 @@ export function HomePage() {
                     setGoalReasonInput(savingsGoalReason || '')
                     setShowGoalDialog(true)
                   }}
-                  className="p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition-colors"
+                  className="p-2.5 bg-white/10 rounded-xl hover:bg-white/20 transition-colors border border-white/10"
                   title="Définir un objectif"
                 >
                   <Target className="h-5 w-5 text-primary" />
@@ -272,46 +284,66 @@ export function HomePage() {
 
               {/* Goal Progress */}
               {savingsGoal && savingsGoal > 0 && (
-                <div className="mt-4 pt-4 border-t border-primary/10">
+                <div className="mt-5 pt-4 border-t border-white/10">
                   <div className="flex justify-between text-xs text-muted mb-2">
-                    <span>
+                    <span className="text-primary/80">
                       {savingsGoalReason ? (
                         <>{savingsGoalReason} • {formatAmount(savingsGoal)}</>
                       ) : (
                         <>Objectif: {formatAmount(savingsGoal)}</>
                       )}
                     </span>
-                    <span>{Math.round(getProgress(stats.totalSaved))}%</span>
+                    <span className="text-primary font-semibold">{Math.round(getProgress(stats.totalSaved))}%</span>
                   </div>
-                  <Progress value={getProgress(stats.totalSaved)} className="h-2" />
+                  <Progress value={getProgress(stats.totalSaved)} className="h-2.5" />
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* XP Card - Clickable to stats */}
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
+            className="cursor-pointer hover:scale-[1.02] transition-all duration-300"
             onClick={() => navigate('/stats')}
           >
-            <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center justify-between mb-2">
+            <CardContent className="p-5 lg:p-6">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-muted">Niveau {level}</span>
-                <span className="text-xs font-medium text-accent">{xp} XP</span>
+                <span className="text-sm font-bold text-primary bg-primary/20 px-2 py-0.5 rounded-lg">{xp} XP</span>
               </div>
-              <Progress value={getLevelProgress() * 100} className="h-2" />
-              <p className="text-xs text-muted mt-1">{getLevelTitle(level)}</p>
+              <Progress value={getLevelProgress() * 100} className="h-2.5" />
+              <p className="text-xs text-accent mt-2 font-medium">{getLevelTitle(level)}</p>
             </CardContent>
           </Card>
 
           {/* Streak Card */}
-          <Card>
-            <CardContent className="p-4 lg:p-6">
-              <p className="text-3xl font-bold text-primary">
-                {currentStreak} <span className="text-xl">🔥</span>
+          <Card className="hover:scale-[1.02] transition-all duration-300">
+            <CardContent className="p-5 lg:p-6">
+              <p className="text-4xl font-bold text-text">
+                {currentStreak} <span className="text-2xl">🔥</span>
               </p>
-              <p className="text-sm text-muted">
-                {currentStreak === 0 ? 'Pas de streak' : 'jours de suite'}
+              <p className="text-sm text-muted mt-1">
+                {currentStreak === 0 ? 'Lance ta série !' : 'jours de suite'}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Gems Card */}
+          <Card
+            className="cursor-pointer hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent border-amber-500/30"
+            onClick={() => navigate('/shop')}
+          >
+            <CardContent className="p-5 lg:p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">💎</span>
+                <p className="text-3xl font-bold text-amber-400">
+                  {getGems(stats.totalSaved)}
+                </p>
+              </div>
+              <p className="text-sm text-amber-300/80">
+                {getActiveVouchers().length > 0
+                  ? `${getActiveVouchers().length} bon${getActiveVouchers().length > 1 ? 's' : ''} disponible${getActiveVouchers().length > 1 ? 's' : ''}`
+                  : 'Ouvrir la boutique'}
               </p>
             </CardContent>
           </Card>
@@ -334,10 +366,10 @@ export function HomePage() {
           </div>
 
           {temptations.length === 0 ? (
-            <Card className="lg:max-w-md">
-              <CardContent className="py-8 text-center">
-                <p className="text-4xl mb-3">🎯</p>
-                <p className="text-muted mb-1">Aucune tentation en cours</p>
+            <Card className="lg:max-w-md border-dashed border-2 border-primary/20 bg-transparent">
+              <CardContent className="py-10 text-center">
+                <p className="text-5xl mb-4">🎯</p>
+                <p className="text-text font-medium mb-1">Aucune tentation en cours</p>
                 <p className="text-sm text-muted">
                   Ajoute ta première pour commencer !
                 </p>
@@ -361,7 +393,7 @@ export function HomePage() {
       <div className="lg:hidden fixed bottom-6 left-0 right-0 flex justify-center">
         <Button
           onClick={() => navigate('/new')}
-          className="h-14 px-8 rounded-full bg-primary hover:bg-primary-deep text-white shadow-xl shadow-primary/25 transition-all hover:scale-105"
+          className="h-14 px-8 rounded-full bg-gradient-to-r from-primary to-primary-deep text-white shadow-2xl shadow-primary/40 transition-all hover:scale-105 hover:shadow-primary/60 border border-white/20"
         >
           <Plus className="h-5 w-5 mr-2" />
           Nouvelle tentation

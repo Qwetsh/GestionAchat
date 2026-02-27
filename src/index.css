@@ -1,23 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* Serene Violet - Minimalist Zen */
+  /* Violet Premium - Modern & Engaging */
   --color-primary: #8B5CF6;
   --color-primary-soft: #DDD6FE;
   --color-primary-deep: #7C3AED;
-  --color-success: #6B9080;
-  --color-warning: #E07A5F;
+  --color-primary-glow: rgba(139, 92, 246, 0.4);
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
   --color-accent: #A78BFA;
-  --color-background: #FAFAFA;
-  --color-surface: #FFFFFF;
-  --color-text: #3F3F46;
-  --color-muted: #A1A1AA;
+  --color-background: #0F0A1A;
+  --color-background-soft: #1A1425;
+  --color-surface: rgba(255, 255, 255, 0.05);
+  --color-surface-hover: rgba(255, 255, 255, 0.08);
+  --color-text: #F5F3FF;
+  --color-muted: #9CA3AF;
+  --color-border: rgba(139, 92, 246, 0.15);
   --radius-default: 1rem;
 }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--color-background);
+  background: linear-gradient(135deg, var(--color-background) 0%, #1E1033 50%, var(--color-background-soft) 100%);
+  background-attachment: fixed;
   color: var(--color-text);
   margin: 0;
   min-height: 100vh;
@@ -25,14 +30,58 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Subtle shadows for cards */
-.card-zen {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+/* Glassmorphism cards */
+.glass-card {
+  background: var(--color-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card:hover {
+  background: var(--color-surface-hover);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+}
+
+/* Premium coffre card */
+.coffre-premium {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(167, 139, 250, 0.1) 50%, rgba(139, 92, 246, 0.05) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.coffre-premium::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.03) 50%,
+    transparent 60%
+  );
+  animation: shine 4s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0%, 100% { transform: translateX(-100%) rotate(45deg); }
+  50% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px var(--color-primary-glow), 0 0 40px rgba(139, 92, 246, 0.2);
 }
 
 /* Smooth transitions */
 * {
-  transition-property: color, background-color, border-color, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

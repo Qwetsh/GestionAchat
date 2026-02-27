@@ -11,7 +11,7 @@ interface AppShellProps {
 }
 
 // Pages that should show the sidebar (authenticated pages)
-const SIDEBAR_ROUTES = ['/', '/history', '/stats', '/new', '/temptation']
+const SIDEBAR_ROUTES = ['/', '/history', '/stats', '/new', '/temptation', '/shop']
 
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation()
@@ -46,7 +46,7 @@ export function AppShell({ children }: AppShellProps) {
   // No sidebar for auth pages
   if (!showSidebar) {
     return (
-      <div className="min-h-screen bg-background lg:flex lg:items-center lg:justify-center">
+      <div className="min-h-screen lg:flex lg:items-center lg:justify-center">
         <div className="w-full lg:max-w-md">
           {children}
         </div>
@@ -55,39 +55,39 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen flex">
       {/* Sidebar - Desktop only */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:border-r lg:border-muted/20 lg:bg-surface">
+      <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:border-r lg:border-primary/10 lg:bg-background/50 lg:backdrop-blur-xl">
         {/* Logo */}
-        <div className="p-6 border-b border-muted/10">
+        <div className="p-6 border-b border-primary/10">
           <h1 className="text-xl font-light tracking-tight text-text">
-            <span className="font-medium text-primary">Gestion</span>Achat
+            <span className="font-semibold text-primary">Gestion</span>Achat
           </h1>
         </div>
 
         {/* User Stats Card */}
         <div className="p-4">
-          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-xl p-4 border border-primary/20">
+          <div className="glass-card rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted">Niveau {level}</span>
               {currentStreak > 0 && (
-                <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                <span className="text-sm font-medium text-primary bg-primary/20 px-2.5 py-0.5 rounded-full border border-primary/30">
                   {currentStreak} 🔥
                 </span>
               )}
             </div>
-            <p className="text-lg font-medium text-text mb-1">{getLevelTitle(level)}</p>
-            <p className="text-xs text-muted">{xp} XP</p>
+            <p className="text-lg font-semibold text-text mb-1">{getLevelTitle(level)}</p>
+            <p className="text-xs text-primary">{xp} XP</p>
           </div>
         </div>
 
         {/* Coffre Summary */}
         <div className="px-4 pb-4">
-          <div className="bg-muted/5 rounded-xl p-4">
+          <div className="coffre-premium rounded-xl p-4">
             <p className="text-xs text-muted mb-1">Ton coffre</p>
-            <p className="text-2xl font-light text-primary">{formatAmount(stats.totalSaved)}</p>
-            <p className="text-xs text-muted mt-1">
-              {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} résistée{stats.resistedCount > 1 ? 's' : ''}
+            <p className="text-2xl font-bold text-text">{formatAmount(stats.totalSaved)}</p>
+            <p className="text-xs text-primary/80 mt-1">
+              {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} résistée{stats.resistedCount > 1 ? 's' : ''} 💪
             </p>
           </div>
         </div>
@@ -104,8 +104,8 @@ export function AppShell({ children }: AppShellProps) {
                 className={cn(
                   'w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-all text-left',
                   isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted hover:bg-muted/10 hover:text-text'
+                    ? 'bg-primary/20 text-primary border border-primary/30'
+                    : 'text-muted hover:bg-white/5 hover:text-text'
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -117,7 +117,7 @@ export function AppShell({ children }: AppShellProps) {
           {/* New Temptation Button */}
           <button
             onClick={() => navigate('/new')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl mt-4 bg-primary text-white hover:bg-primary-deep transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl mt-4 bg-gradient-to-r from-primary to-primary-deep text-white hover:shadow-lg hover:shadow-primary/30 transition-all"
           >
             <Plus className="h-5 w-5" />
             <span className="font-medium">Nouvelle tentation</span>
@@ -125,10 +125,10 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
 
         {/* Logout */}
-        <div className="p-4 border-t border-muted/10">
+        <div className="p-4 border-t border-primary/10">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:bg-muted/10 hover:text-text transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:bg-white/5 hover:text-text transition-all"
           >
             <LogOut className="h-5 w-5" />
             <span className="font-medium">Déconnexion</span>

@@ -10,6 +10,7 @@ import { NewTemptationPage } from '@/pages/NewTemptationPage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { TemptationDetailPage } from '@/pages/TemptationDetailPage'
 import { StatsPage } from '@/pages/StatsPage'
+import { ShopPage } from '@/pages/ShopPage'
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -134,6 +135,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/shop"
+          element={
+            <ProtectedRoute>
+              <ShopPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch all - redirect to auth check */}
         <Route path="*" element={<Navigate to="/auth" replace />} />
@@ -145,8 +154,9 @@ function App() {
         position="top-center"
         toastOptions={{
           style: {
-            background: 'white',
-            border: '1px solid #e5e7eb',
+            background: 'rgba(26, 20, 37, 0.95)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            color: '#F5F3FF',
           },
         }}
       />
