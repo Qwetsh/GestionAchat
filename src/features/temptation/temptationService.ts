@@ -1,7 +1,7 @@
 // Local Storage Temptation Service
 // Handles all temptation CRUD operations locally
 
-export type Category = 'cosmetics' | 'books' | 'stationery' | 'other'
+export type Category = 'cosmetics' | 'books' | 'stationery' | 'videogames' | 'other'
 export type Status = 'active' | 'resisted' | 'cracked'
 
 export interface Temptation {
@@ -200,6 +200,7 @@ export function getCategoryResistedStats(): Record<Category, number> {
     cosmetics: 0,
     books: 0,
     stationery: 0,
+    videogames: 0,
     other: 0,
   }
 
@@ -214,6 +215,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   cosmetics: 'Cosmétique',
   books: 'Livres',
   stationery: 'Feutres/Coloriage',
+  videogames: 'Jeux vidéo',
   other: 'Autre',
 }
 
@@ -221,5 +223,6 @@ export const CATEGORY_EMOJIS: Record<Category, string> = {
   cosmetics: '💄',
   books: '📚',
   stationery: '🖍️',
+  videogames: '🎮',
   other: '🛍️',
 }

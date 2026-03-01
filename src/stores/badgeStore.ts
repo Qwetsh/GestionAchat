@@ -138,6 +138,14 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     check: (stats) => (stats.categoryResisted.stationery || 0) >= 5,
   },
   {
+    id: 'gamer-econome',
+    name: 'Gamer Économe',
+    description: '5 jeux vidéo résistés',
+    emoji: '🎮',
+    category: 'category',
+    check: (stats) => (stats.categoryResisted.videogames || 0) >= 5,
+  },
+  {
     id: 'minimaliste',
     name: 'Minimaliste',
     description: '5 "autres" résistés',

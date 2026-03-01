@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 import { Camera, ImagePlus, X, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const CATEGORIES: Category[] = ['cosmetics', 'books', 'stationery', 'other']
+const CATEGORIES: Category[] = ['cosmetics', 'books', 'stationery', 'videogames', 'other']
 
 export function NewTemptationPage() {
   const navigate = useNavigate()
