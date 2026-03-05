@@ -1,5 +1,11 @@
 // Local Storage Auth Service - No backend needed
 // Perfect for single-user app
+//
+// SECURITY NOTE: This is a LOCAL-ONLY auth system designed for a personal app.
+// - PIN is hashed client-side with SHA-256 + static salt
+// - 4-digit PIN = 10,000 combinations (not secure against targeted attacks)
+// - localStorage is accessible via DevTools (acceptable for personal use)
+// - DO NOT use this pattern for multi-user or production apps
 
 const STORAGE_KEYS = {
   USER: 'gestion-achat-user',

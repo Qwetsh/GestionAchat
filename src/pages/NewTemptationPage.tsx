@@ -8,6 +8,7 @@ import {
   CATEGORY_EMOJIS,
 } from '@/features/temptation/temptationService'
 import { useGamificationStore } from '@/stores/gamificationStore'
+import { XP_REWARDS } from '@/lib/constants'
 import { toast } from 'sonner'
 import { Camera, ImagePlus, X, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -93,16 +94,16 @@ export function NewTemptationPage() {
         category,
       })
 
-      addXP(15)
+      addXP(XP_REWARDS.CREATE_TEMPTATION)
 
-      toast.success('+15 XP ! Timer 24h lance', {
+      toast.success(`+${XP_REWARDS.CREATE_TEMPTATION} XP ! Timer 24h lancé`, {
         description: 'Tu peux le faire !',
       })
 
       navigate('/')
     } catch (error) {
       console.error('Error creating temptation:', error)
-      toast.error('Erreur lors de la creation')
+      toast.error('Erreur lors de la création')
     } finally {
       setIsSubmitting(false)
     }
@@ -184,7 +185,7 @@ export function NewTemptationPage() {
 
         {/* Amount Section */}
         <div className="text-center">
-          <p className="text-sm text-muted mb-4">Combien ca coute ?</p>
+          <p className="text-sm text-muted mb-4">Combien ça coûte ?</p>
           <div className="relative inline-block">
             <input
               type="text"
@@ -236,9 +237,9 @@ export function NewTemptationPage() {
           </Button>
 
           <p className="text-center text-xs text-muted mt-4">
-            <span className="text-primary">+15 XP</span> maintenant
+            <span className="text-primary">+{XP_REWARDS.CREATE_TEMPTATION} XP</span> maintenant
             {' '}&bull;{' '}
-            <span className="text-success">+50 XP</span> si tu resistes 24h
+            <span className="text-success">+{XP_REWARDS.RESIST_TEMPTATION} XP</span> si tu résistes 24h
           </p>
         </div>
       </div>

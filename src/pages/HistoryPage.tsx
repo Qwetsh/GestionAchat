@@ -65,9 +65,9 @@ export function HistoryPage() {
       <div className="p-4 lg:p-8 space-y-6 max-w-md lg:max-w-none mx-auto">
         {/* Hero Stats */}
         <div className="text-center py-6">
-          <p className="text-sm text-muted mb-2">Total economise</p>
-          <p className="text-5xl font-light text-primary mb-4">
-            {formatAmount(stats.totalSaved)}
+          <p className="text-sm text-muted mb-2">Ton coffre</p>
+          <p className={`text-5xl font-light mb-4 ${stats.netSaved < 0 ? 'text-red-400' : 'text-primary'}`}>
+            {formatAmount(stats.netSaved)}
           </p>
           <div className="flex justify-center gap-8 text-sm">
             <div>
@@ -139,11 +139,16 @@ export function HistoryPage() {
           </div>
         )}
 
-        {/* Cracked total (if any) */}
-        {stats.crackedCount > 0 && (
-          <p className="text-center text-sm text-muted">
-            Depense totale: <span className="text-warning">{formatAmount(stats.totalCracked)}</span>
-          </p>
+        {/* Breakdown */}
+        {(stats.resistedCount > 0 || stats.crackedCount > 0) && (
+          <div className="text-center text-sm text-muted space-y-1">
+            {stats.resistedCount > 0 && (
+              <p>Économisé: <span className="text-success">{formatAmount(stats.totalSaved)}</span></p>
+            )}
+            {stats.crackedCount > 0 && (
+              <p>Dépensé: <span className="text-warning">-{formatAmount(stats.totalCracked)}</span></p>
+            )}
+          </div>
         )}
       </div>
     </div>

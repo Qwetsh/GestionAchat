@@ -1,8 +1,12 @@
 // Local Storage Temptation Service
 // Handles all temptation CRUD operations locally
 
-export type Category = 'cosmetics' | 'books' | 'stationery' | 'videogames' | 'other'
+import { type Category, CATEGORIES } from '@/lib/constants'
+export type { Category }
 export type Status = 'active' | 'resisted' | 'cracked'
+
+// Re-export CATEGORIES for convenience
+export { CATEGORIES }
 
 export interface Temptation {
   id: string
@@ -172,6 +176,7 @@ export function getTimerProgress(temptation: Temptation): number {
 export function getStats(): {
   totalSaved: number
   totalCracked: number
+  netSaved: number // totalSaved - totalCracked (peut être négatif)
   resistedCount: number
   crackedCount: number
   activeCount: number
@@ -182,9 +187,13 @@ export function getStats(): {
   const cracked = temptations.filter((t) => t.status === 'cracked')
   const active = temptations.filter((t) => t.status === 'active')
 
+  const totalSaved = resisted.reduce((sum, t) => sum + t.amount, 0)
+  const totalCracked = cracked.reduce((sum, t) => sum + t.amount, 0)
+
   return {
-    totalSaved: resisted.reduce((sum, t) => sum + t.amount, 0),
-    totalCracked: cracked.reduce((sum, t) => sum + t.amount, 0),
+    totalSaved,
+    totalCracked,
+    netSaved: totalSaved - totalCracked,
     resistedCount: resisted.length,
     crackedCount: cracked.length,
     activeCount: active.length,

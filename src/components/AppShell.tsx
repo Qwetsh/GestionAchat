@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useGamificationStore, getLevelTitle } from '@/stores/gamificationStore'
@@ -18,7 +18,10 @@ export function AppShell({ children }: AppShellProps) {
   const navigate = useNavigate()
   const { isAuthenticated, logout } = useAuthStore()
   const { xp, level, currentStreak } = useGamificationStore()
-  const stats = getStats()
+  // Memoize stats to avoid reading localStorage on every render
+  // Stats are refreshed when location changes (navigation between pages)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stats = useMemo(() => getStats(), [location.pathname])
 
   // Check if current route should show sidebar
   const showSidebar = isAuthenticated && SIDEBAR_ROUTES.some(route =>
@@ -85,9 +88,14 @@ export function AppShell({ children }: AppShellProps) {
         <div className="px-4 pb-4">
           <div className="coffre-premium rounded-xl p-4">
             <p className="text-xs text-muted mb-1">Ton coffre</p>
-            <p className="text-2xl font-bold text-text">{formatAmount(stats.totalSaved)}</p>
+            <p className={`text-2xl font-bold ${stats.netSaved < 0 ? 'text-red-400' : 'text-text'}`}>
+              {formatAmount(stats.netSaved)}
+            </p>
             <p className="text-xs text-primary/80 mt-1">
-              {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} résistée{stats.resistedCount > 1 ? 's' : ''} 💪
+              {stats.resistedCount} résistée{stats.resistedCount > 1 ? 's' : ''} 💪
+              {stats.crackedCount > 0 && (
+                <span className="text-red-400/80"> · {stats.crackedCount} craquée{stats.crackedCount > 1 ? 's' : ''}</span>
+              )}
             </p>
           </div>
         </div>

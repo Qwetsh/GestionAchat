@@ -27,7 +27,7 @@ export function ShopPage() {
     spendGems,
     addVoucher,
     getActiveVouchers,
-    useVoucher,
+    useVoucher: markVoucherUsed,
     getWheelWinChance,
     spinWheel,
   } = useGemStore()
@@ -43,7 +43,7 @@ export function ShopPage() {
     selectedBackground,
   } = useMascotStore()
 
-  const gems = getGems(stats.totalSaved)
+  const gems = getGems(Math.max(0, stats.netSaved))
   const vouchers = getActiveVouchers()
   const wheelChance = getWheelWinChance()
   const isDev = window.location.hostname === 'localhost'
@@ -114,7 +114,7 @@ export function ShopPage() {
 
   const confirmUseVoucher = () => {
     if (selectedVoucher) {
-      useVoucher(selectedVoucher)
+      markVoucherUsed(selectedVoucher)
       setShowVoucherDialog(false)
       setSelectedVoucher(null)
       toast.success('Bon utilisé !', {

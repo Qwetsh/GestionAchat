@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Toaster } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { AppShell } from '@/components/AppShell'
 import { RegisterPage } from '@/pages/RegisterPage'
@@ -148,18 +147,6 @@ function App() {
         <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
       </AppShell>
-
-      {/* Toast notifications */}
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: 'rgba(26, 20, 37, 0.95)',
-            border: '1px solid rgba(139, 92, 246, 0.2)',
-            color: '#F5F3FF',
-          },
-        }}
-      />
     </HashRouter>
   )
 }

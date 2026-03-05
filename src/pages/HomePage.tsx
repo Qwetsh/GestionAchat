@@ -13,7 +13,7 @@ import {
 import { useBadgeStore, type BadgeStats } from '@/stores/badgeStore'
 import { useGoalStore } from '@/stores/goalStore'
 import { useGemStore } from '@/stores/gemStore'
-// Mascot is imported directly in the component
+import { XP_REWARDS } from '@/lib/constants'
 import { CatMascot } from '@/components/CatMascot'
 import { useNotifications } from '@/hooks/useNotifications'
 import {
@@ -104,19 +104,19 @@ export function HomePage() {
   const [temptations, setTemptations] = useState<Temptation[]>(() => getActiveTemptations())
   const [stats, setStats] = useState(() => {
     const s = getStats()
-    return { totalSaved: s.totalSaved, resistedCount: s.resistedCount }
+    return { totalSaved: s.totalSaved, netSaved: s.netSaved, resistedCount: s.resistedCount, crackedCount: s.crackedCount }
   })
 
   // Handle resolved temptations on mount
   useEffect(() => {
     if (initialResolved.length > 0) {
       initialResolved.forEach(() => {
-        addXP(50)
+        addXP(XP_REWARDS.RESIST_TEMPTATION)
         incrementStreak()
       })
       const totalSaved = initialResolved.reduce((sum, t) => sum + t.amount, 0)
       celebrateResistance()
-      toast.success(`🎉 Tu as résisté ! +${initialResolved.length * 50} XP`, {
+      toast.success(`🎉 Tu as résisté ! +${initialResolved.length * XP_REWARDS.RESIST_TEMPTATION} XP`, {
         description: `${totalSaved.toFixed(2)} € économisés !`,
         duration: 5000,
       })
@@ -137,12 +137,12 @@ export function HomePage() {
       const resolved = checkAndResolveExpired()
       if (resolved.length > 0) {
         resolved.forEach(() => {
-          addXP(50)
+          addXP(XP_REWARDS.RESIST_TEMPTATION)
           incrementStreak()
         })
         const totalSaved = resolved.reduce((sum, t) => sum + t.amount, 0)
         celebrateResistance()
-        toast.success(`🎉 Tu as résisté ! +${resolved.length * 50} XP`, {
+        toast.success(`🎉 Tu as résisté ! +${resolved.length * XP_REWARDS.RESIST_TEMPTATION} XP`, {
           description: `${totalSaved.toFixed(2)} € économisés !`,
           duration: 5000,
         })
@@ -159,7 +159,9 @@ export function HomePage() {
       const newStats = getStats()
       setStats({
         totalSaved: newStats.totalSaved,
+        netSaved: newStats.netSaved,
         resistedCount: newStats.resistedCount,
+        crackedCount: newStats.crackedCount,
       })
     }, 60 * 1000)
     return () => clearInterval(interval)
@@ -170,16 +172,18 @@ export function HomePage() {
     const newStats = getStats()
     setStats({
       totalSaved: newStats.totalSaved,
+      netSaved: newStats.netSaved,
       resistedCount: newStats.resistedCount,
+      crackedCount: newStats.crackedCount,
     })
   }
 
   const handleCrack = (id: string) => {
     markAsCracked(id)
-    addXP(5)
+    addXP(XP_REWARDS.CONSCIOUS_CRACK)
 
     toast('Dépense consciente notée', {
-      description: '+5 XP - La conscience, c\'est déjà une victoire !',
+      description: `+${XP_REWARDS.CONSCIOUS_CRACK} XP - La conscience, c'est déjà une victoire !`,
       duration: 4000,
     })
 
@@ -261,11 +265,14 @@ export function HomePage() {
                     </div>
                     <p className="text-sm text-muted font-medium">Ton coffre</p>
                   </div>
-                  <p className="text-4xl font-bold text-text mb-1 tracking-tight">
-                    {formatAmount(stats.totalSaved)}
+                  <p className={`text-4xl font-bold mb-1 tracking-tight ${stats.netSaved < 0 ? 'text-red-400' : 'text-text'}`}>
+                    {formatAmount(stats.netSaved)}
                   </p>
                   <p className="text-sm text-primary/80">
-                    {stats.resistedCount} tentation{stats.resistedCount > 1 ? 's' : ''} résistée{stats.resistedCount > 1 ? 's' : ''} 💪
+                    {stats.resistedCount} résistée{stats.resistedCount > 1 ? 's' : ''} 💪
+                    {stats.crackedCount > 0 && (
+                      <span className="text-red-400/80"> · {stats.crackedCount} craquée{stats.crackedCount > 1 ? 's' : ''}</span>
+                    )}
                   </p>
                 </div>
                 <button
@@ -293,9 +300,9 @@ export function HomePage() {
                         <>Objectif: {formatAmount(savingsGoal)}</>
                       )}
                     </span>
-                    <span className="text-primary font-semibold">{Math.round(getProgress(stats.totalSaved))}%</span>
+                    <span className="text-primary font-semibold">{Math.round(getProgress(stats.netSaved))}%</span>
                   </div>
-                  <Progress value={getProgress(stats.totalSaved)} className="h-2.5" />
+                  <Progress value={getProgress(stats.netSaved)} className="h-2.5" />
                 </div>
               )}
             </div>
@@ -337,7 +344,7 @@ export function HomePage() {
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">💎</span>
                 <p className="text-3xl font-bold text-amber-400">
-                  {getGems(stats.totalSaved)}
+                  {getGems(Math.max(0, stats.netSaved))}
                 </p>
               </div>
               <p className="text-sm text-amber-300/80">
