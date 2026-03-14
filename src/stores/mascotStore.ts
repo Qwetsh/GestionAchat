@@ -79,7 +79,7 @@ export const BACKGROUNDS: Background[] = [
     },
   },
   {
-    id: 'bureau', name: 'Bureau', emoji: '💼', image: '/GestionAchat/mascot/backgrounds/Bureau.png', gemCost: 10,
+    id: 'bureau', name: 'Bureau', emoji: '💼', image: '/GestionAchat/mascot/backgrounds/Bureau.png', gemCost: 0,
     theme: {
       btnPrimary: ['#818CF8', '#4F46E5'],
       btnShop: ['#F472B6', '#DB2777'],
@@ -148,9 +148,9 @@ export const useMascotStore = create<MascotState>()(
   persist(
     (set, get) => ({
       unlockedCats: ['mochi'], // Mochi is free
-      unlockedBackgrounds: ['none'], // None is free
+      unlockedBackgrounds: ['none', 'bureau'], // None + Bureau are free
       selectedCat: 'mochi',
-      selectedBackground: 'none',
+      selectedBackground: 'bureau',
 
       unlockCat: (id: string) => {
         set((state) => ({
@@ -192,6 +192,14 @@ export const useMascotStore = create<MascotState>()(
     }),
     {
       name: 'mascot-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state && !state.unlockedBackgrounds.includes('bureau')) {
+          state.unlockedBackgrounds.push('bureau')
+          if (state.selectedBackground === 'none') {
+            state.selectedBackground = 'bureau'
+          }
+        }
+      },
     }
   )
 )
