@@ -114,6 +114,12 @@ export const useBudgetStore = create<BudgetState>()(
         // Already processed this week
         if (lastProcessedWeekId === currentWeekId) return null
 
+        // Fresh account — never processed before, skip (no real data for previous week)
+        if (lastProcessedWeekId === null) {
+          set({ lastProcessedWeekId: currentWeekId })
+          return null
+        }
+
         // Calculate the previous week's ID to process
         const prevWeekDate = new Date()
         prevWeekDate.setDate(prevWeekDate.getDate() - 7)
