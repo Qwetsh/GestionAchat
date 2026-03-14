@@ -23,7 +23,7 @@ import {
   notifyWeeklyOverBudget,
 } from '@/features/notifications/notificationService'
 import { toast } from 'sonner'
-import { Wallet, BarChart3, PiggyBank, Receipt, ShoppingBag, TrendingUp, Cat, LogOut, Sparkles } from 'lucide-react'
+import { Wallet, BarChart3, PiggyBank, Receipt, ShoppingBag, TrendingUp, Cat, LogOut, Sparkles, Trash2 } from 'lucide-react'
 // GameButton only used for the main CTA now; secondary actions moved to menu
 import { celebrateBadge, celebrateLevelUp } from '@/lib/confetti'
 import { cn } from '@/lib/utils'
@@ -140,6 +140,12 @@ export function HomePage() {
     { label: 'Budget & dépenses fixes', icon: PiggyBank, action: () => navigate('/budget'), color: 'text-amber-400' },
     { label: 'Nouveau revenu', icon: TrendingUp, action: () => navigate('/new-revenue'), color: 'text-emerald-400' },
     { label: 'Changer de mascotte', icon: Cat, action: () => setMascotPickerOpen(true), color: 'text-purple-400' },
+    { label: 'Réinitialiser', icon: Trash2, action: () => {
+      if (window.confirm('Supprimer TOUTES les données ? Cette action est irréversible.')) {
+        localStorage.clear()
+        window.location.reload()
+      }
+    }, color: 'text-red-400' },
     { label: 'Déconnexion', icon: LogOut, action: () => { logout(); navigate('/login') }, color: 'text-red-400' },
   ]
 
