@@ -11,7 +11,7 @@ export function ImmersiveBackground({ children }: ImmersiveBackgroundProps) {
   const hasImage = !!background.image
 
   return (
-    <div className="fixed inset-0 overflow-y-auto">
+    <div className="fixed inset-0 overflow-hidden">
       {/* Background image or default gradient */}
       {hasImage ? (
         <img
@@ -34,7 +34,7 @@ export function ImmersiveBackground({ children }: ImmersiveBackgroundProps) {
       )}
 
       {/* Content */}
-      <div className="relative z-[2]">
+      <div className="relative z-[2] h-full flex flex-col overflow-hidden">
         {children}
       </div>
     </div>

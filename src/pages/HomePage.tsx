@@ -186,10 +186,10 @@ export function HomePage() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="min-h-screen flex flex-col items-center pt-20 pb-6 px-5">
+      {/* Main Content — exactly fits viewport, no scroll */}
+      <div className="flex-1 flex flex-col items-center pt-20 pb-4 px-5 overflow-hidden">
         {/* Action Buttons - right after top bar */}
-        <div className="w-full max-w-sm mt-2 space-y-2.5">
+        <div className="w-full max-w-sm mt-2 space-y-2.5 shrink-0">
           <GameButton
             onClick={() => navigate('/new')}
             icon={<Wallet className="h-6 w-6" />}
@@ -219,7 +219,7 @@ export function HomePage() {
         </div>
 
         {/* Speech bubble */}
-        <div className="flex-1 flex flex-col items-center justify-center w-full max-w-xs">
+        <div className="flex-1 flex flex-col items-center justify-center w-full max-w-xs min-h-0">
           <div className={`speech-bubble relative overflow-hidden rounded-2xl px-5 py-3.5 border border-white/25 shadow-lg transition-opacity duration-500 ${phraseVisible ? 'opacity-100' : 'opacity-0'}`}
             style={{
               background: `linear-gradient(135deg, ${theme.bubbleBg} 0%, rgba(255,255,255,0.08) 100%)`,
@@ -239,7 +239,7 @@ export function HomePage() {
         </div>
 
         {/* Mascot Zone - sits at the bottom */}
-        <div className="flex items-end justify-center pb-4 mt-3">
+        <div className="flex items-end justify-center shrink-0">
           <CatMascot size="hero" showBackground={false} />
         </div>
       </div>
@@ -250,14 +250,25 @@ export function HomePage() {
       {/* Mascot Picker Overlay */}
       <MascotPicker open={mascotPickerOpen} onClose={() => setMascotPickerOpen(false)} />
 
-      {/* DEV: Test level-up modal */}
+      {/* DEV: Debug buttons */}
       {import.meta.env.DEV && (
-        <button
-          onClick={() => setLevelUpLevel(level + 1)}
-          className="fixed bottom-4 right-4 z-50 px-3 py-1.5 text-xs bg-red-500/80 text-white rounded-lg"
-        >
-          Test LevelUp
-        </button>
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-1.5">
+          <button
+            onClick={() => setLevelUpLevel(level + 1)}
+            className="px-3 py-1.5 text-xs bg-red-500/80 text-white rounded-lg"
+          >
+            Test LevelUp
+          </button>
+          <button
+            onClick={() => {
+              localStorage.clear()
+              window.location.reload()
+            }}
+            className="px-3 py-1.5 text-xs bg-yellow-500/80 text-black font-bold rounded-lg"
+          >
+            Reset All
+          </button>
+        </div>
       )}
 
       {/* Level Up Modal */}
