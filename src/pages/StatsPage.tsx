@@ -1,33 +1,70 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import {
-  getAllTemptations,
-  getStats,
-  type Temptation,
-} from '@/features/temptation/temptationService'
 import { useGamificationStore, getLevelTitle } from '@/stores/gamificationStore'
 import { useBadgeStore, type Badge } from '@/stores/badgeStore'
+import { useExpenseStore } from '@/stores/expenseStore'
+import { useRevenueStore } from '@/stores/revenueStore'
+import {
+  EXPENSE_CATEGORY_LABELS,
+  EXPENSE_CATEGORY_EMOJIS,
+  REVENUE_SOURCE_LABELS,
+  REVENUE_SOURCE_EMOJIS,
+  type ExpenseCategory,
+  type RevenueSource,
+} from '@/lib/constants'
 import { ArrowLeft } from 'lucide-react'
-
-interface MonthlyStats {
-  month: string
-  monthKey: string
-  resisted: number
-  cracked: number
-  savedAmount: number
-  crackedAmount: number
-  total: number
-}
 
 export function StatsPage() {
   const navigate = useNavigate()
   const { xp, level, bestStreak, currentStreak, getLevelProgress, getNextLevelXP } = useGamificationStore()
   const { getBadgesByCategory } = useBadgeStore()
-  const temptations = useMemo(() => getAllTemptations(), [])
-  const stats = useMemo(() => getStats(), [])
 
-  // Get badges by category
+  const {
+    getTotalForWeek,
+    getTotalForMonth,
+    getTotalForYear,
+    getTotalAllTime,
+    getTotalForSelf,
+    getTotalForOthers,
+    getExpensesForMonth,
+    getCategoryBreakdown,
+  } = useExpenseStore()
+
+  const {
+    getTotalForMonth: revMonthTotal,
+    getTotalForYear: revYearTotal,
+    getTotalAllTime: revAllTime,
+    getRevenuesForMonth,
+    getBySource,
+  } = useRevenueStore()
+
+  // Memoize stats
+  const expenseStats = useMemo(() => ({
+    week: getTotalForWeek(),
+    month: getTotalForMonth(),
+    year: getTotalForYear(),
+    allTime: getTotalAllTime(),
+    forSelf: getTotalForSelf(),
+    forOthers: getTotalForOthers(),
+  }), [getTotalForWeek, getTotalForMonth, getTotalForYear, getTotalAllTime, getTotalForSelf, getTotalForOthers])
+
+  const revenueStats = useMemo(() => ({
+    month: revMonthTotal(),
+    year: revYearTotal(),
+    allTime: revAllTime(),
+  }), [revMonthTotal, revYearTotal, revAllTime])
+
+  const monthCategoryBreakdown = useMemo(() => {
+    const expenses = getExpensesForMonth()
+    return getCategoryBreakdown(expenses)
+  }, [getExpensesForMonth, getCategoryBreakdown])
+
+  const monthRevenueBySource = useMemo(() => {
+    const revenues = getRevenuesForMonth()
+    return getBySource(revenues)
+  }, [getRevenuesForMonth, getBySource])
+
   const milestoneBadges = getBadgesByCategory('milestone')
   const streakBadges = getBadgesByCategory('streak')
   const categoryBadges = getBadgesByCategory('category')
@@ -67,44 +104,6 @@ export function StatsPage() {
     )
   }
 
-  // Group temptations by month
-  const monthlyStats = useMemo(() => {
-    const grouped: Record<string, Temptation[]> = {}
-
-    temptations.forEach((t) => {
-      const date = new Date(t.createdAt)
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      if (!grouped[key]) {
-        grouped[key] = []
-      }
-      grouped[key].push(t)
-    })
-
-    const result: MonthlyStats[] = Object.entries(grouped)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([key, items]) => {
-        const resisted = items.filter((t) => t.status === 'resisted')
-        const cracked = items.filter((t) => t.status === 'cracked')
-        const date = new Date(key + '-01')
-        const monthName = date.toLocaleDateString('fr-FR', {
-          month: 'long',
-          year: 'numeric',
-        })
-
-        return {
-          month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-          monthKey: key,
-          resisted: resisted.length,
-          cracked: cracked.length,
-          savedAmount: resisted.reduce((sum, t) => sum + t.amount, 0),
-          crackedAmount: cracked.reduce((sum, t) => sum + t.amount, 0),
-          total: items.length,
-        }
-      })
-
-    return result
-  }, [temptations])
-
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -112,9 +111,13 @@ export function StatsPage() {
     }).format(amount)
   }
 
-  const successRate = stats.resistedCount + stats.crackedCount > 0
-    ? Math.round((stats.resistedCount / (stats.resistedCount + stats.crackedCount)) * 100)
-    : 0
+  const sortedCategories = Object.entries(monthCategoryBreakdown)
+    .filter(([, amount]) => amount > 0)
+    .sort(([, a], [, b]) => b - a)
+
+  const sortedSources = Object.entries(monthRevenueBySource)
+    .filter(([, amount]) => amount > 0)
+    .sort(([, a], [, b]) => b - a)
 
   return (
     <div className="min-h-screen bg-background pb-6">
@@ -141,7 +144,6 @@ export function StatsPage() {
           <p className="text-sm text-muted mb-1">Niveau {level}</p>
           <p className="text-2xl font-light text-text mb-4">{getLevelTitle(level)}</p>
 
-          {/* XP Progress */}
           <div className="max-w-xs mx-auto">
             <div className="flex justify-between text-xs text-muted mb-2">
               <span>{xp} XP</span>
@@ -159,83 +161,101 @@ export function StatsPage() {
         {/* Key Metrics */}
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <p className="text-3xl font-light text-primary">{successRate}%</p>
-            <p className="text-xs text-muted mt-1">reussite</p>
+            <p className="text-3xl font-light text-text">{currentStreak}</p>
+            <p className="text-xs text-muted mt-1">semaines 🔥</p>
           </div>
           <div className="text-center border-x border-muted/10">
-            <p className="text-3xl font-light text-text">{currentStreak}</p>
-            <p className="text-xs text-muted mt-1">streak 🔥</p>
-          </div>
-          <div className="text-center">
             <p className="text-3xl font-light text-primary">{bestStreak}</p>
             <p className="text-xs text-muted mt-1">record</p>
           </div>
+          <div className="text-center">
+            <p className="text-3xl font-light text-text">{xp}</p>
+            <p className="text-xs text-muted mt-1">XP total</p>
+          </div>
         </div>
 
-        {/* Financial Summary */}
+        {/* Expense Summary */}
         <div className="bg-muted/5 rounded-2xl p-6 space-y-4">
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted">Economise</span>
-            <span className="text-2xl font-light text-success">{formatAmount(stats.totalSaved)}</span>
+          <h3 className="text-sm text-muted font-medium">Dépenses</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted">Cette semaine</p>
+              <p className="text-xl font-light text-text">{formatAmount(expenseStats.week)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Ce mois</p>
+              <p className="text-xl font-light text-text">{formatAmount(expenseStats.month)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Cette année</p>
+              <p className="text-xl font-light text-text">{formatAmount(expenseStats.year)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Depuis le début</p>
+              <p className="text-xl font-light text-text">{formatAmount(expenseStats.allTime)}</p>
+            </div>
           </div>
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted">Depense</span>
-            <span className="text-xl font-light text-warning">{formatAmount(stats.totalCracked)}</span>
-          </div>
-          <div className="border-t border-muted/10 pt-4 flex justify-between items-baseline">
-            <span className="text-sm font-medium">Bilan</span>
-            <span className={`text-2xl font-light ${
-              stats.totalSaved - stats.totalCracked >= 0 ? 'text-success' : 'text-warning'
-            }`}>
-              {stats.totalSaved - stats.totalCracked >= 0 ? '+' : ''}{formatAmount(stats.totalSaved - stats.totalCracked)}
-            </span>
+
+          {/* For self vs for others */}
+          <div className="border-t border-muted/10 pt-4 grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted">Pour moi</p>
+              <p className="text-lg font-light text-primary">{formatAmount(expenseStats.forSelf)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Pour quelqu'un</p>
+              <p className="text-lg font-light text-accent">{formatAmount(expenseStats.forOthers)}</p>
+            </div>
           </div>
         </div>
 
-        {/* Monthly Breakdown */}
-        <div>
-          <h3 className="text-sm text-muted mb-4">Par mois</h3>
-
-          {monthlyStats.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-4xl mb-4">📊</p>
-              <p className="text-muted">Pas encore de donnees</p>
+        {/* Monthly Category Breakdown */}
+        {sortedCategories.length > 0 && (
+          <div className="bg-muted/5 rounded-2xl p-6">
+            <h3 className="text-sm text-muted font-medium mb-4">Dépenses du mois par catégorie</h3>
+            <div className="space-y-3">
+              {sortedCategories.map(([cat, amount]) => (
+                <div key={cat} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{EXPENSE_CATEGORY_EMOJIS[cat as ExpenseCategory]}</span>
+                    <span className="text-sm text-text">{EXPENSE_CATEGORY_LABELS[cat as ExpenseCategory]}</span>
+                  </div>
+                  <span className="text-sm font-medium text-text">{formatAmount(amount)}</span>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="space-y-4">
-              {monthlyStats.map((month) => (
-                <div key={month.monthKey} className="bg-surface rounded-xl p-4 border border-muted/10">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="font-medium">{month.month}</span>
-                    <span className="text-xs text-muted">{month.total} tentation{month.total > 1 ? 's' : ''}</span>
-                  </div>
+          </div>
+        )}
 
-                  {/* Mini progress bar */}
-                  <div className="h-1.5 bg-muted/10 rounded-full overflow-hidden mb-3">
-                    <div className="h-full flex">
-                      <div
-                        className="bg-success rounded-l-full"
-                        style={{ width: `${month.total > 0 ? (month.resisted / month.total) * 100 : 0}%` }}
-                      />
-                      <div
-                        className="bg-warning rounded-r-full"
-                        style={{ width: `${month.total > 0 ? (month.cracked / month.total) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
+        {/* Revenue Summary */}
+        <div className="bg-emerald-500/5 rounded-2xl p-6 space-y-4">
+          <h3 className="text-sm text-emerald-400 font-medium">Revenus</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs text-muted">Ce mois</p>
+              <p className="text-xl font-light text-emerald-400">{formatAmount(revenueStats.month)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Cette année</p>
+              <p className="text-xl font-light text-emerald-400">{formatAmount(revenueStats.year)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Depuis le début</p>
+              <p className="text-xl font-light text-emerald-400">{formatAmount(revenueStats.allTime)}</p>
+            </div>
+          </div>
 
-                  <div className="flex justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-success" />
-                      <span className="text-muted">{month.resisted}</span>
-                      <span className="text-success font-medium">{formatAmount(month.savedAmount)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-warning" />
-                      <span className="text-muted">{month.cracked}</span>
-                      <span className="text-warning font-medium">{formatAmount(month.crackedAmount)}</span>
-                    </div>
+          {/* Revenue by source */}
+          {sortedSources.length > 0 && (
+            <div className="border-t border-emerald-500/10 pt-4 space-y-3">
+              <p className="text-xs text-muted">Ce mois par source</p>
+              {sortedSources.map(([src, amount]) => (
+                <div key={src} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>{REVENUE_SOURCE_EMOJIS[src as RevenueSource]}</span>
+                    <span className="text-sm text-text">{REVENUE_SOURCE_LABELS[src as RevenueSource]}</span>
                   </div>
+                  <span className="text-sm font-medium text-emerald-400">{formatAmount(amount)}</span>
                 </div>
               ))}
             </div>
@@ -246,7 +266,6 @@ export function StatsPage() {
         <div className="space-y-6">
           <h3 className="text-sm text-muted">Badges</h3>
 
-          {/* Milestone Badges */}
           <div>
             <p className="text-xs text-muted mb-3 flex items-center gap-2">
               <span>🏆</span> Jalons
@@ -258,7 +277,6 @@ export function StatsPage() {
             </div>
           </div>
 
-          {/* Streak Badges */}
           <div>
             <p className="text-xs text-muted mb-3 flex items-center gap-2">
               <span>🔥</span> Streaks
@@ -270,7 +288,6 @@ export function StatsPage() {
             </div>
           </div>
 
-          {/* Category Badges */}
           <div>
             <p className="text-xs text-muted mb-3 flex items-center gap-2">
               <span>🎯</span> Catégories

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGemStore } from '@/stores/gemStore'
+import { useBudgetStore } from '@/stores/budgetStore'
 import { useMascotStore, CAT_SKINS, BACKGROUNDS } from '@/stores/mascotStore'
-import { getStats } from '@/features/temptation/temptationService'
+import { useTalentStore, getUnlockedBudgetBoostsFromStore } from '@/stores/talentStore'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
+
 import { CatMascot } from '@/components/CatMascot'
-import { ArrowLeft, Gift, Sparkles, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Sparkles, RotateCcw, Lock, Gem } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -21,16 +22,14 @@ import {
 
 export function ShopPage() {
   const navigate = useNavigate()
-  const stats = getStats()
   const {
-    getGems,
+    getAvailableGems,
     spendGems,
-    addVoucher,
-    getActiveVouchers,
-    useVoucher: markVoucherUsed,
     getWheelWinChance,
     spinWheel,
   } = useGemStore()
+
+  const { addWeeklyBonus, getWeeklyBonus } = useBudgetStore()
 
   const {
     isCatUnlocked,
@@ -43,54 +42,38 @@ export function ShopPage() {
     selectedBackground,
   } = useMascotStore()
 
-  const gems = getGems(Math.max(0, stats.netSaved))
-  const vouchers = getActiveVouchers()
+  const { isShopItemUnlocked } = useTalentStore()
+
+  const gems = getAvailableGems()
+  const currentBonus = getWeeklyBonus()
   const wheelChance = getWheelWinChance()
   const isDev = window.location.hostname === 'localhost'
+  const wheelUnlocked = isShopItemUnlocked('wheel')
+  const budgetBoosts = getUnlockedBudgetBoostsFromStore()
 
   const handleDebugAddGems = () => {
-    // Add 10 gems by reducing spent gems (allows negative for debug)
-    const { spentGems } = useGemStore.getState()
-    useGemStore.setState({ spentGems: spentGems - 10 })
-    toast.success('+10 💎 (debug)')
+    useGemStore.getState().addGems(10)
+    toast.success('+10 rubis (debug)')
   }
 
   const [showWheelDialog, setShowWheelDialog] = useState(false)
   const [isSpinning, setIsSpinning] = useState(false)
   const [wheelResult, setWheelResult] = useState<'won' | 'lost' | null>(null)
-  const [showVoucherDialog, setShowVoucherDialog] = useState(false)
-  const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'vouchers' | 'mascot'>('vouchers')
-
-  const handleBuyDirect = () => {
-    if (gems < 20) {
-      toast.error('Pas assez de gemmes', {
-        description: 'Il te faut 20 gemmes pour acheter un bon',
-      })
-      return
-    }
-
-    spendGems(20)
-    addVoucher('direct', 20)
-    toast.success('Bon d\'achat obtenu !', {
-      description: 'Tu peux maintenant acheter quelque chose ≤ 20€',
-    })
-  }
+  const [activeTab, setActiveTab] = useState<'budget' | 'mascot'>('budget')
 
   const handleSpinWheel = () => {
-    if (gems < 10) {
+    if (gems < 5) {
       toast.error('Pas assez de gemmes', {
-        description: 'Il te faut 10 gemmes pour tourner la roue',
+        description: 'Il te faut 5 gemmes pour tourner la roue',
       })
       return
     }
-
     setShowWheelDialog(true)
     setWheelResult(null)
   }
 
   const doSpin = () => {
-    spendGems(10)
+    spendGems(5)
     setIsSpinning(true)
 
     setTimeout(() => {
@@ -99,28 +82,10 @@ export function ShopPage() {
       setIsSpinning(false)
 
       if (won) {
-        addVoucher('wheel', 30)
-        toast.success('🎉 Jackpot !', {
-          description: 'Tu as gagné un bon d\'achat ≤ 30€ !',
-        })
+        addWeeklyBonus(30)
+        toast.success('+30 € de budget cette semaine !')
       }
     }, 2000)
-  }
-
-  const handleUseVoucher = (id: string) => {
-    setSelectedVoucher(id)
-    setShowVoucherDialog(true)
-  }
-
-  const confirmUseVoucher = () => {
-    if (selectedVoucher) {
-      markVoucherUsed(selectedVoucher)
-      setShowVoucherDialog(false)
-      setSelectedVoucher(null)
-      toast.success('Bon utilisé !', {
-        description: 'Profite bien de ton achat sans culpabilité 🎁',
-      })
-    }
   }
 
   const handleCatClick = (catId: string, gemCost: number) => {
@@ -132,7 +97,7 @@ export function ShopPage() {
       spendGems(gemCost)
       unlockCat(catId)
       selectCat(catId)
-      toast.success('Nouveau chat débloqué ! 🐱')
+      toast.success('Nouveau chat débloqué !')
     } else {
       toast.error('Pas assez de gemmes')
     }
@@ -147,7 +112,7 @@ export function ShopPage() {
       spendGems(gemCost)
       unlockBackground(bgId)
       selectBackground(bgId)
-      toast.success('Nouveau fond débloqué ! ✨')
+      toast.success('Nouveau fond débloqué !')
     } else {
       toast.error('Pas assez de gemmes')
     }
@@ -181,11 +146,11 @@ export function ShopPage() {
                 onClick={handleDebugAddGems}
                 className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 text-sm rounded-lg border border-green-500/30 transition-colors"
               >
-                +10 💎
+                +10 <Gem className="h-3.5 w-3.5 inline" />
               </button>
             )}
             <div className="flex items-center gap-2 bg-amber-500/20 px-4 py-2 rounded-xl border border-amber-500/30">
-              <span className="text-xl">💎</span>
+              <Gem className="h-5 w-5 text-amber-400" />
               <span className="text-xl font-bold text-amber-400">{gems}</span>
             </div>
           </div>
@@ -196,15 +161,15 @@ export function ShopPage() {
         {/* Tabs */}
         <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
           <button
-            onClick={() => setActiveTab('vouchers')}
+            onClick={() => setActiveTab('budget')}
             className={cn(
               'flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all',
-              activeTab === 'vouchers'
+              activeTab === 'budget'
                 ? 'bg-primary text-white'
                 : 'text-muted hover:text-text'
             )}
           >
-            🎁 Bons d'achat
+            💰 Budget
           </button>
           <button
             onClick={() => setActiveTab('mascot')}
@@ -236,9 +201,7 @@ export function ShopPage() {
 
             {/* Cats */}
             <div>
-              <h3 className="text-lg font-semibold text-text mb-3 flex items-center gap-2">
-                🐱 Chatons
-              </h3>
+              <h3 className="text-lg font-semibold text-text mb-3">🐱 Chatons</h3>
               <div className="grid grid-cols-2 gap-3">
                 {CAT_SKINS.map((cat) => {
                   const unlocked = isCatUnlocked(cat.id)
@@ -257,23 +220,13 @@ export function ShopPage() {
                     >
                       <CardContent className="p-4 text-center">
                         <div className="w-16 h-16 mx-auto mb-2">
-                          <img
-                            src={cat.image}
-                            alt={cat.name}
-                            className="w-full h-full object-contain"
-                          />
+                          <img src={cat.image} alt={cat.name} className="w-full h-full object-contain" />
                         </div>
-                        <p className="text-sm font-medium text-text">
-                          {cat.emoji} {cat.name}
-                        </p>
+                        <p className="text-sm font-medium text-text">{cat.emoji} {cat.name}</p>
                         {unlocked ? (
-                          <p className="text-xs text-success mt-1">
-                            {isSelected ? '✓ Sélectionné' : 'Débloqué'}
-                          </p>
+                          <p className="text-xs text-success mt-1">{isSelected ? '✓ Sélectionné' : 'Débloqué'}</p>
                         ) : (
-                          <p className="text-xs text-amber-400 mt-1 flex items-center justify-center gap-1">
-                            💎 {cat.gemCost}
-                          </p>
+                          <p className="text-xs text-amber-400 mt-1 flex items-center gap-1 justify-center"><Gem className="h-3 w-3" /> {cat.gemCost}</p>
                         )}
                       </CardContent>
                     </Card>
@@ -284,9 +237,7 @@ export function ShopPage() {
 
             {/* Backgrounds */}
             <div>
-              <h3 className="text-lg font-semibold text-text mb-3 flex items-center gap-2">
-                ✨ Décors
-              </h3>
+              <h3 className="text-lg font-semibold text-text mb-3">✨ Décors</h3>
               <div className="grid grid-cols-2 gap-3">
                 {BACKGROUNDS.map((bg) => {
                   const unlocked = isBackgroundUnlocked(bg.id)
@@ -306,20 +257,14 @@ export function ShopPage() {
                       <CardContent className="p-0">
                         {bg.image ? (
                           <div className="relative">
-                            <img
-                              src={bg.image}
-                              alt={bg.name}
-                              className="w-full h-24 object-cover"
-                            />
+                            <img src={bg.image} alt={bg.name} className="w-full h-24 object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                             <div className="absolute bottom-2 left-2 right-2">
-                              <p className="text-xs font-medium text-white">
-                                {bg.emoji} {bg.name}
-                              </p>
+                              <p className="text-xs font-medium text-white">{bg.emoji} {bg.name}</p>
                               {unlocked ? (
                                 isSelected && <span className="text-xs text-success">✓</span>
                               ) : (
-                                <p className="text-xs text-amber-400">💎 {bg.gemCost}</p>
+                                <p className="text-xs text-amber-400 flex items-center gap-1"><Gem className="h-3 w-3" /> {bg.gemCost}</p>
                               )}
                             </div>
                           </div>
@@ -339,128 +284,138 @@ export function ShopPage() {
           </>
         ) : (
           <>
-            {/* Active Vouchers */}
-            {vouchers.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold text-text mb-3 flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-primary" />
-                  Mes bons d'achat
-                </h2>
-                <div className="space-y-3">
-                  {vouchers.map((voucher) => (
-                    <Card
-                      key={voucher.id}
-                      className="border-success/30 bg-success/10 cursor-pointer hover:scale-[1.01] transition-all"
-                      onClick={() => handleUseVoucher(voucher.id)}
-                    >
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-text">
-                            Bon {voucher.type === 'wheel' ? '🎰' : '💎'} ≤ {formatAmount(voucher.maxAmount)}
-                          </p>
-                          <p className="text-sm text-muted">
-                            Clique pour utiliser
-                          </p>
-                        </div>
-                        <div className="text-3xl">🎁</div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+            {/* Current week bonus info */}
+            {currentBonus > 0 && (
+              <Card className="border-emerald-500/30 bg-emerald-500/10">
+                <CardContent className="p-4 text-center">
+                  <p className="text-sm text-muted">Bonus cette semaine</p>
+                  <p className="text-2xl font-bold text-emerald-400">+{formatAmount(currentBonus)}</p>
+                </CardContent>
+              </Card>
             )}
 
             {/* Shop Items */}
             <div>
               <h2 className="text-lg font-semibold text-text mb-3 flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Échanger des gemmes
+                Augmenter ton budget
               </h2>
 
               <div className="space-y-4">
-                {/* Direct Purchase */}
-                <Card className="overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="p-5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold text-text text-lg">Achat Direct</h3>
-                          <p className="text-sm text-muted mt-1">
-                            Obtiens un bon d'achat ≤ 20€ sans culpabilité
-                          </p>
-                        </div>
-                        <div className="text-4xl">🛍️</div>
-                      </div>
-
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">💎</span>
-                          <span className="text-2xl font-bold text-amber-400">20</span>
-                        </div>
-                        <Button
-                          onClick={handleBuyDirect}
-                          disabled={gems < 20}
-                          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                        >
-                          Échanger
-                        </Button>
-                      </div>
-                    </div>
-
-                    {gems < 20 && (
-                      <div className="px-5 pb-4">
-                        <p className="text-xs text-muted mb-2">
-                          Encore {20 - gems} gemme{20 - gems > 1 ? 's' : ''} ({formatAmount((20 - gems) * 10)} à économiser)
-                        </p>
-                        <Progress value={(gems / 20) * 100} className="h-1.5" />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Wheel of Fortune */}
-                <Card className="overflow-hidden border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-transparent">
-                  <CardContent className="p-0">
-                    <div className="p-5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold text-text text-lg">Roue de la Chance</h3>
-                          <p className="text-sm text-muted mt-1">
-                            Tente ta chance pour un bon ≤ 30€ !
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-1 rounded-full">
-                              {wheelChance}% de chance
-                            </span>
+                {/* Talent-unlocked budget boosts */}
+                {budgetBoosts.length > 0 ? (
+                  budgetBoosts.map((boost) => {
+                    const handleBuy = () => {
+                      if (gems < boost.cost) {
+                        toast.error('Pas assez de rubis')
+                        return
+                      }
+                      spendGems(boost.cost)
+                      addWeeklyBonus(boost.amount)
+                      toast.success(`+${boost.amount} € de budget cette semaine !`, {
+                        description: `-${boost.cost} rubis`,
+                      })
+                    }
+                    return (
+                      <Card key={`boost-${boost.amount}`} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="p-5">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-semibold text-text text-lg">+{boost.amount} € de budget</h3>
+                                <p className="text-sm text-muted mt-1">
+                                  Ajoute {boost.amount} € à ta semaine en cours
+                                </p>
+                              </div>
+                              <div className="text-4xl">💰</div>
+                            </div>
+                            <div className="mt-4 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Gem className="h-5 w-5 text-amber-400" />
+                                <span className="text-2xl font-bold text-amber-400">{boost.cost}</span>
+                              </div>
+                              <Button
+                                onClick={handleBuy}
+                                disabled={gems < boost.cost}
+                                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                              >
+                                Échanger
+                              </Button>
+                            </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })
+                ) : (
+                  <Card className="overflow-hidden border-white/5">
+                    <CardContent className="p-5 text-center">
+                      <Lock className="h-8 w-8 text-white/20 mx-auto mb-2" />
+                      <p className="text-sm text-muted">Aucun boost débloqué</p>
+                      <p className="text-xs text-white/30 mt-1">Débloque des boosts via l'arbre de talents</p>
+                      <Button
+                        onClick={() => navigate('/talents')}
+                        variant="outline"
+                        className="mt-3 text-xs"
+                      >
+                        Voir l'arbre de talents
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Wheel of Fortune - locked by talent */}
+                <Card className={cn(
+                  'overflow-hidden border-purple-500/30',
+                  wheelUnlocked
+                    ? 'bg-gradient-to-br from-purple-500/10 to-transparent'
+                    : 'opacity-50'
+                )}>
+                  <CardContent className="p-0">
+                    <div className="p-5">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-text text-lg flex items-center gap-2">
+                            Roue de la Chance
+                            {!wheelUnlocked && <Lock className="h-4 w-4 text-white/30" />}
+                          </h3>
+                          {wheelUnlocked ? (
+                            <>
+                              <p className="text-sm text-muted mt-1">
+                                Tente ta chance pour +30 € de budget !
+                              </p>
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-1 rounded-full">
+                                  {wheelChance}% de chance
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-sm text-muted mt-1">
+                              Talent "Roue de la chance" requis (Niv. 3)
+                            </p>
+                          )}
                         </div>
-                        <div className="text-4xl">🎰</div>
+                        <div className="text-4xl">{wheelUnlocked ? '🎰' : '🔒'}</div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">💎</span>
-                          <span className="text-2xl font-bold text-amber-400">10</span>
+                      {wheelUnlocked && (
+                        <div className="mt-4 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Gem className="h-5 w-5 text-amber-400" />
+                            <span className="text-2xl font-bold text-amber-400">5</span>
+                          </div>
+                          <Button
+                            onClick={handleSpinWheel}
+                            disabled={gems < 5}
+                            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Tourner
+                          </Button>
                         </div>
-                        <Button
-                          onClick={handleSpinWheel}
-                          disabled={gems < 10}
-                          className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
-                        >
-                          <RotateCcw className="h-4 w-4 mr-2" />
-                          Tourner
-                        </Button>
-                      </div>
+                      )}
                     </div>
-
-                    {gems < 10 && (
-                      <div className="px-5 pb-4">
-                        <p className="text-xs text-muted mb-2">
-                          Encore {10 - gems} gemme{10 - gems > 1 ? 's' : ''} ({formatAmount((10 - gems) * 10)} à économiser)
-                        </p>
-                        <Progress value={(gems / 10) * 100} className="h-1.5" />
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -471,9 +426,9 @@ export function ShopPage() {
               <CardContent className="p-5">
                 <h3 className="font-semibold text-text mb-3">Comment ça marche ?</h3>
                 <div className="space-y-2 text-sm text-muted">
-                  <p>💎 Tu gagnes <span className="text-primary">1 gemme</span> tous les 10€ économisés</p>
-                  <p>🛍️ <span className="text-amber-400">20 gemmes</span> = bon d'achat garanti ≤ 20€</p>
-                  <p>🎰 <span className="text-purple-400">10 gemmes</span> = roue avec chance de gagner ≤ 30€</p>
+                  <p><Gem className="h-3.5 w-3.5 inline text-amber-400" /> Tu gagnes des <span className="text-primary">rubis</span> en restant sous budget chaque semaine</p>
+                  <p>🌳 Débloque des <span className="text-amber-400">talents</span> pour accéder aux boosts budget et à la roue</p>
+                  <p>🎰 La roue se débloque via le <span className="text-purple-400">talent Niv. 3</span></p>
                   <p>📈 Tes chances à la roue augmentent si tu perds !</p>
                 </div>
               </CardContent>
@@ -493,7 +448,7 @@ export function ShopPage() {
               {isSpinning
                 ? 'Croise les doigts !'
                 : wheelResult === 'won'
-                  ? 'Tu as gagné un bon d\'achat ≤ 30€ !'
+                  ? '+30 € ajoutés à ton budget cette semaine !'
                   : wheelResult === 'lost'
                     ? `Pas de chance cette fois. Tes chances passent à ${getWheelWinChance()}% !`
                     : `Tu as ${wheelChance}% de chance de gagner`}
@@ -509,7 +464,7 @@ export function ShopPage() {
           <DialogFooter className="flex-col gap-2">
             {!wheelResult && !isSpinning && (
               <Button onClick={doSpin} className="w-full bg-gradient-to-r from-purple-500 to-purple-600">
-                Tourner la roue (-10 💎)
+                Tourner la roue (-5 rubis)
               </Button>
             )}
             {(wheelResult || isSpinning) && (
@@ -525,33 +480,6 @@ export function ShopPage() {
                 Fermer
               </Button>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Use Voucher Dialog */}
-      <Dialog open={showVoucherDialog} onOpenChange={setShowVoucherDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Utiliser ce bon ?</DialogTitle>
-            <DialogDescription>
-              Une fois utilisé, ce bon sera marqué comme consommé. Assure-toi d'avoir fait ton achat !
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowVoucherDialog(false)}
-              className="flex-1"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={confirmUseVoucher}
-              className="flex-1 bg-success hover:bg-success/90"
-            >
-              J'ai acheté ! 🎁
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

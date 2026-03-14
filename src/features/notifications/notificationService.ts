@@ -1,5 +1,4 @@
 // Local Notification Service
-// Handles browser notifications for timer alerts
 
 const NOTIFICATION_PERMISSION_KEY = 'notification-permission-asked'
 
@@ -44,35 +43,25 @@ export function showNotification(
     requireInteraction: options?.requireInteraction || false,
   })
 
-  // Auto close after 10 seconds
   setTimeout(() => notification.close(), 10000)
 
-  // Focus app on click
   notification.onclick = () => {
     window.focus()
     notification.close()
   }
 }
 
-export function notifyTimerExpired(temptationAmount: number): void {
-  showNotification('Tu as resiste! 🎉', {
-    body: `Bravo! Tu as economise ${temptationAmount.toFixed(2)} €`,
-    tag: 'timer-expired',
+export function notifyWeeklyGemsEarned(gemsEarned: number, savedAmount: number): void {
+  showNotification(`+${gemsEarned} gemmes gagnées ! 💎`, {
+    body: `Bravo ! Tu as économisé ${savedAmount.toFixed(2)} € cette semaine`,
+    tag: 'weekly-gems',
     requireInteraction: true,
   })
 }
 
-export function notifyOneHourLeft(temptationAmount: number): void {
-  showNotification('Plus que 1 heure! 💪', {
-    body: `Tiens bon! ${temptationAmount.toFixed(2)} € en jeu`,
-    tag: 'one-hour-left',
-  })
-}
-
-export function notifyMultipleExpired(count: number, totalSaved: number): void {
-  showNotification(`${count} tentations resistees! 🎉`, {
-    body: `Incroyable! Tu as economise ${totalSaved.toFixed(2)} €`,
-    tag: 'multiple-expired',
-    requireInteraction: true,
+export function notifyWeeklyOverBudget(overAmount: number): void {
+  showNotification('Budget dépassé cette semaine 😕', {
+    body: `${overAmount.toFixed(2)} € de dépassement. Nouvelle semaine, nouveau départ !`,
+    tag: 'weekly-over',
   })
 }

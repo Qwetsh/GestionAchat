@@ -5,11 +5,12 @@ import { AppShell } from '@/components/AppShell'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
-import { NewTemptationPage } from '@/pages/NewTemptationPage'
-import { HistoryPage } from '@/pages/HistoryPage'
-import { TemptationDetailPage } from '@/pages/TemptationDetailPage'
+import { NewExpensePage } from '@/pages/NewExpensePage'
+import { NewRevenuePage } from '@/pages/NewRevenuePage'
 import { StatsPage } from '@/pages/StatsPage'
 import { ShopPage } from '@/pages/ShopPage'
+import { BudgetPage } from '@/pages/BudgetPage'
+import { TalentTreePage } from '@/pages/TalentTreePage'
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -53,17 +54,14 @@ function InitialRoute() {
     return <Navigate to="/" replace />
   }
 
-  // If we know there's no account, go to register
   if (hasAccount === false) {
     return <Navigate to="/register" replace />
   }
 
-  // If there's an account, go to login
   if (hasAccount === true) {
     return <Navigate to="/login" replace />
   }
 
-  // Still checking, show nothing (or loading)
   return null
 }
 
@@ -72,7 +70,6 @@ function App() {
     <HashRouter>
       <AppShell>
       <Routes>
-        {/* Initial route - determines where to go */}
         <Route path="/auth" element={<InitialRoute />} />
 
         {/* Auth routes */}
@@ -106,23 +103,15 @@ function App() {
           path="/new"
           element={
             <ProtectedRoute>
-              <NewTemptationPage />
+              <NewExpensePage />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/history"
+          path="/new-revenue"
           element={
             <ProtectedRoute>
-              <HistoryPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/temptation/:id"
-          element={
-            <ProtectedRoute>
-              <TemptationDetailPage />
+              <NewRevenuePage />
             </ProtectedRoute>
           }
         />
@@ -135,6 +124,14 @@ function App() {
           }
         />
         <Route
+          path="/budget"
+          element={
+            <ProtectedRoute>
+              <BudgetPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/shop"
           element={
             <ProtectedRoute>
@@ -142,8 +139,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/talents"
+          element={
+            <ProtectedRoute>
+              <TalentTreePage />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Catch all - redirect to auth check */}
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
       </AppShell>

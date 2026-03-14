@@ -5,11 +5,13 @@ import { LEVEL_THRESHOLDS, calculateLevel } from '@/lib/constants'
 interface GamificationState {
   xp: number
   level: number
+  // Streaks are now weekly: consecutive weeks under budget
   currentStreak: number
   bestStreak: number
-  lastResistDate: string | null
+  lastSuccessWeekId: string | null
+
   addXP: (amount: number) => void
-  incrementStreak: () => void
+  incrementStreak: (weekId: string) => void
   resetStreak: () => void
   getNextLevelXP: () => number
   getLevelProgress: () => number
@@ -22,43 +24,45 @@ export const useGamificationStore = create<GamificationState>()(
       level: 1,
       currentStreak: 0,
       bestStreak: 0,
-      lastResistDate: null,
+      lastSuccessWeekId: null,
 
-      addXP: (amount: number) => {
+      addXP: (amount) => {
         set((state) => {
           const newXP = state.xp + amount
-          const newLevel = calculateLevel(newXP)
           return {
             xp: newXP,
-            level: newLevel,
+            level: calculateLevel(newXP),
           }
         })
       },
 
-      incrementStreak: () => {
-        const today = new Date().toDateString()
-        const { lastResistDate, currentStreak, bestStreak } = get()
+      incrementStreak: (weekId: string) => {
+        const { lastSuccessWeekId, currentStreak, bestStreak } = get()
 
-        // Check if already incremented today
-        if (lastResistDate === today) return
+        // Already counted this week
+        if (lastSuccessWeekId === weekId) return
 
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        const wasYesterday = lastResistDate === yesterday.toDateString()
+        // Check if previous week was the last success (consecutive)
+        // weekId format is "YYYY-MM-DD" (Monday date)
+        let isConsecutive = false
+        if (lastSuccessWeekId) {
+          const lastDate = new Date(lastSuccessWeekId)
+          const thisDate = new Date(weekId)
+          const diffDays = (thisDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+          isConsecutive = Math.abs(diffDays - 7) < 2 // ~7 days apart = consecutive weeks
+        }
 
-        const newStreak = wasYesterday || !lastResistDate ? currentStreak + 1 : 1
+        const newStreak = isConsecutive ? currentStreak + 1 : 1
         const newBest = Math.max(newStreak, bestStreak)
 
         set({
           currentStreak: newStreak,
           bestStreak: newBest,
-          lastResistDate: today,
+          lastSuccessWeekId: weekId,
         })
       },
 
-      resetStreak: () => {
-        set({ currentStreak: 0 })
-      },
+      resetStreak: () => set({ currentStreak: 0 }),
 
       getNextLevelXP: () => {
         const { level } = get()
@@ -72,15 +76,19 @@ export const useGamificationStore = create<GamificationState>()(
         const { xp, level } = get()
         const currentThreshold = LEVEL_THRESHOLDS[level - 1] || 0
         const nextThreshold = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1]
-        const progress = (xp - currentThreshold) / (nextThreshold - currentThreshold)
-        return Math.min(1, Math.max(0, progress))
+        return Math.min(1, Math.max(0, (xp - currentThreshold) / (nextThreshold - currentThreshold)))
       },
     }),
     {
       name: 'gamification-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Recalculate level from XP on load (fixes stale level after threshold changes)
+          state.level = calculateLevel(state.xp)
+        }
+      },
     }
   )
 )
 
-// Re-export getLevelTitle from constants for backwards compatibility
 export { getLevelTitle } from '@/lib/constants'

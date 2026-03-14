@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Category } from '@/features/temptation/temptationService'
 
 export interface Badge {
   id: string
@@ -20,138 +19,95 @@ export interface BadgeDefinition {
 }
 
 export interface BadgeStats {
-  totalSaved: number
-  resistedCount: number
+  totalGemsEarned: number
+  weeksUnderBudget: number
   currentStreak: number
-  categoryResisted: Record<Category, number>
 }
 
-// All badge definitions
+// Badge definitions adapted for the new expense/budget system
 const BADGE_DEFINITIONS: BadgeDefinition[] = [
-  // Milestone badges
+  // Milestone badges - based on gems earned (reflecting overall savings)
   {
-    id: 'premiere-victoire',
-    name: 'Première Victoire',
-    description: '1 tentation résistée',
-    emoji: '🏆',
+    id: 'premiere-gemme',
+    name: 'Première Gemme',
+    description: '1 gemme gagnée',
+    emoji: '💎',
     category: 'milestone',
-    check: (stats) => stats.resistedCount >= 1,
+    check: (stats) => stats.totalGemsEarned >= 1,
   },
   {
     id: 'econome',
     name: 'Économe',
-    description: '50€ économisés',
+    description: '10 gemmes gagnées',
     emoji: '💰',
     category: 'milestone',
-    check: (stats) => stats.totalSaved >= 50,
+    check: (stats) => stats.totalGemsEarned >= 10,
   },
   {
     id: 'coffre-plein',
     name: 'Coffre Plein',
-    description: '200€ économisés',
-    emoji: '💎',
+    description: '50 gemmes gagnées',
+    emoji: '👑',
     category: 'milestone',
-    check: (stats) => stats.totalSaved >= 200,
+    check: (stats) => stats.totalGemsEarned >= 50,
   },
   {
     id: 'fortune',
     name: 'Fortune',
-    description: '500€ économisés',
-    emoji: '👑',
+    description: '100 gemmes gagnées',
+    emoji: '🏆',
     category: 'milestone',
-    check: (stats) => stats.totalSaved >= 500,
+    check: (stats) => stats.totalGemsEarned >= 100,
+  },
+  {
+    id: 'premiere-semaine',
+    name: 'Première Semaine',
+    description: '1 semaine sous budget',
+    emoji: '🎯',
+    category: 'milestone',
+    check: (stats) => stats.weeksUnderBudget >= 1,
   },
   {
     id: 'veteran',
     name: 'Vétéran',
-    description: '10 tentations résistées',
+    description: '10 semaines sous budget',
     emoji: '🎖️',
     category: 'milestone',
-    check: (stats) => stats.resistedCount >= 10,
-  },
-  {
-    id: 'centurion',
-    name: 'Centurion',
-    description: '100 tentations résistées',
-    emoji: '🏅',
-    category: 'milestone',
-    check: (stats) => stats.resistedCount >= 100,
+    check: (stats) => stats.weeksUnderBudget >= 10,
   },
 
-  // Streak badges
+  // Streak badges - consecutive weeks under budget
   {
     id: 'debut-flamme',
     name: 'Début de Flamme',
-    description: '3 jours d\'affilée',
+    description: '2 semaines d\'affilée',
     emoji: '🔥',
     category: 'streak',
-    check: (stats) => stats.currentStreak >= 3,
+    check: (stats) => stats.currentStreak >= 2,
   },
   {
-    id: 'semaine-parfaite',
-    name: 'Semaine Parfaite',
-    description: '7 jours d\'affilée',
+    id: 'mois-parfait',
+    name: 'Mois Parfait',
+    description: '4 semaines d\'affilée',
     emoji: '⭐',
     category: 'streak',
-    check: (stats) => stats.currentStreak >= 7,
+    check: (stats) => stats.currentStreak >= 4,
   },
   {
-    id: 'quinzaine',
-    name: 'Quinzaine',
-    description: '15 jours d\'affilée',
+    id: 'deux-mois',
+    name: 'Deux Mois de Fer',
+    description: '8 semaines d\'affilée',
     emoji: '🌟',
     category: 'streak',
-    check: (stats) => stats.currentStreak >= 15,
+    check: (stats) => stats.currentStreak >= 8,
   },
   {
-    id: 'mois-de-fer',
-    name: 'Mois de Fer',
-    description: '30 jours d\'affilée',
+    id: 'trimestre',
+    name: 'Trimestre d\'Or',
+    description: '12 semaines d\'affilée',
     emoji: '💪',
     category: 'streak',
-    check: (stats) => stats.currentStreak >= 30,
-  },
-
-  // Category badges
-  {
-    id: 'anti-cosmetiques',
-    name: 'Anti-Cosmétiques',
-    description: '5 cosmétiques résistés',
-    emoji: '💄',
-    category: 'category',
-    check: (stats) => (stats.categoryResisted.cosmetics || 0) >= 5,
-  },
-  {
-    id: 'rat-bibliotheque',
-    name: 'Rat de Bibliothèque',
-    description: '5 livres résistés',
-    emoji: '📚',
-    category: 'category',
-    check: (stats) => (stats.categoryResisted.books || 0) >= 5,
-  },
-  {
-    id: 'papeterie-zero',
-    name: 'Papeterie Zéro',
-    description: '5 papeteries résistées',
-    emoji: '✏️',
-    category: 'category',
-    check: (stats) => (stats.categoryResisted.stationery || 0) >= 5,
-  },
-  {
-    id: 'gamer-econome',
-    name: 'Gamer Économe',
-    description: '5 jeux vidéo résistés',
-    emoji: '🎮',
-    category: 'category',
-    check: (stats) => (stats.categoryResisted.videogames || 0) >= 5,
-  },
-  {
-    id: 'minimaliste',
-    name: 'Minimaliste',
-    description: '5 "autres" résistés',
-    emoji: '🎯',
-    category: 'category',
-    check: (stats) => (stats.categoryResisted.other || 0) >= 5,
+    check: (stats) => stats.currentStreak >= 12,
   },
 ]
 
@@ -162,7 +118,6 @@ interface BadgeState {
   getAllBadges: () => Badge[]
 }
 
-// Initialize all badges as locked
 function initializeBadges(): Record<string, Badge> {
   const badges: Record<string, Badge> = {}
   BADGE_DEFINITIONS.forEach((def) => {
@@ -188,8 +143,7 @@ export const useBadgeStore = create<BadgeState>()(
 
         BADGE_DEFINITIONS.forEach((def) => {
           const badge = badges[def.id]
-          // Only check if not already unlocked
-          if (!badge.unlockedAt && def.check(stats)) {
+          if (badge && !badge.unlockedAt && def.check(stats)) {
             const updatedBadge = {
               ...badge,
               unlockedAt: new Date().toISOString(),
@@ -216,22 +170,21 @@ export const useBadgeStore = create<BadgeState>()(
         return BADGE_DEFINITIONS
           .filter((def) => def.category === category)
           .map((def) => badges[def.id])
+          .filter(Boolean)
       },
 
       getAllBadges: () => {
         const { badges } = get()
-        return BADGE_DEFINITIONS.map((def) => badges[def.id])
+        return BADGE_DEFINITIONS.map((def) => badges[def.id]).filter(Boolean)
       },
     }),
     {
       name: 'badge-storage',
-      // Merge stored badges with any new badge definitions
       merge: (persisted, current) => {
         const persistedState = persisted as BadgeState | undefined
         if (!persistedState?.badges) {
           return current
         }
-        // Merge: keep unlocked status from persisted, add any new badges
         const mergedBadges = initializeBadges()
         Object.keys(persistedState.badges).forEach((id) => {
           if (mergedBadges[id]) {

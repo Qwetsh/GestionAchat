@@ -2,7 +2,7 @@ import { useMascotStore } from '@/stores/mascotStore'
 import { cn } from '@/lib/utils'
 
 interface CatMascotProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero'
   className?: string
   showBackground?: boolean
 }
@@ -12,6 +12,20 @@ export function CatMascot({ size = 'md', className, showBackground = true }: Cat
 
   const cat = getSelectedCat()
   const background = getSelectedBackground()
+
+  // Hero mode: just the cat, no container, for immersive backgrounds
+  if (size === 'hero') {
+    return (
+      <img
+        src={cat.image}
+        alt={cat.name}
+        className={cn(
+          'w-52 h-52 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] animate-bounce-in',
+          className,
+        )}
+      />
+    )
+  }
 
   // Tailles carrées (sans fond) vs rectangulaires (avec fond)
   const sizeClasses = {

@@ -1,474 +1,271 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useGamificationStore, getLevelTitle } from '@/stores/gamificationStore'
-import {
-  getActiveTemptations,
-  checkAndResolveExpired,
-  markAsCracked,
-  getStats,
-  getCategoryResistedStats,
-  type Temptation,
-} from '@/features/temptation/temptationService'
-import { useBadgeStore, type BadgeStats } from '@/stores/badgeStore'
-import { useGoalStore } from '@/stores/goalStore'
+import { useExpenseStore } from '@/stores/expenseStore'
 import { useGemStore } from '@/stores/gemStore'
-import { XP_REWARDS } from '@/lib/constants'
+import { useBudgetStore } from '@/stores/budgetStore'
+import {
+  XP_REWARDS,
+  getWeekId,
+} from '@/lib/constants'
 import { CatMascot } from '@/components/CatMascot'
+import { ImmersiveBackground } from '@/components/ImmersiveBackground'
+import { TopStatsBar } from '@/components/TopStatsBar'
+import { GameButton } from '@/components/GameButton'
+import { ExpenseSheet } from '@/components/ExpenseSheet'
+import { MascotPicker } from '@/components/MascotPicker'
+import { LevelUpModal } from '@/components/LevelUpModal'
+import { useMascotStore } from '@/stores/mascotStore'
 import { useNotifications } from '@/hooks/useNotifications'
 import {
-  notifyMultipleExpired,
-  notifyTimerExpired,
+  notifyWeeklyGemsEarned,
+  notifyWeeklyOverBudget,
 } from '@/features/notifications/notificationService'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { TemptationCard } from '@/components/TemptationCard'
 import { toast } from 'sonner'
-import { Plus, LogOut, Bell, Target, Gem } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { celebrateResistance, celebrateBadge, celebrateLevelUp } from '@/lib/confetti'
-
-// Load initial data synchronously (called once at module level per mount)
-function getInitialState() {
-  const resolved = checkAndResolveExpired()
-  const temptations = getActiveTemptations()
-  const stats = getStats()
-  return { resolved, temptations, stats }
-}
+import { Wallet, BarChart3, PiggyBank, Receipt, ShoppingBag, TrendingUp, Cat, LogOut, Sparkles } from 'lucide-react'
+// GameButton only used for the main CTA now; secondary actions moved to menu
+import { celebrateBadge, celebrateLevelUp } from '@/lib/confetti'
+import { cn } from '@/lib/utils'
+import { getMascotPhrase, type MascotContext } from '@/lib/mascotPhrases'
+import type { Expense } from '@/types'
+import type { ExpenseCategory } from '@/lib/constants'
 
 export function HomePage() {
   const navigate = useNavigate()
   const { logout } = useAuthStore()
-  const { xp, level, currentStreak, addXP, incrementStreak, getLevelProgress } = useGamificationStore()
+  const { level, currentStreak, addXP, incrementStreak } = useGamificationStore()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [mascotPickerOpen, setMascotPickerOpen] = useState(false)
+  const [expenseSheetOpen, setExpenseSheetOpen] = useState(false)
+  const [levelUpLevel, setLevelUpLevel] = useState<number | null>(null)
   const { isSupported: notifSupported, permissionStatus, askPermission, hasAskedPermission } = useNotifications()
-  const { checkAndUnlock } = useBadgeStore()
-  const { savingsGoal, savingsGoalReason, setSavingsGoal, getProgress } = useGoalStore()
-  const { getGems, getActiveVouchers } = useGemStore()
+  const { getExpensesForWeek, getTotalForWeek, getTotalForMonth, getTotalForSelf, getTotalForOthers, getCategoryBreakdown } = useExpenseStore()
+  const { addGems, getAvailableGems } = useGemStore()
+  const { processWeekEnd, getEffectiveBudget } = useBudgetStore()
+  const { getSelectedBackground } = useMascotStore()
+  const theme = getSelectedBackground().theme
 
-  // Goal dialog state
-  const [showGoalDialog, setShowGoalDialog] = useState(false)
-  const [goalInput, setGoalInput] = useState('')
-  const [goalReasonInput, setGoalReasonInput] = useState('')
-
-  // Track previous level for level up detection
   const prevLevelRef = useRef(level)
 
-  // Detect level up and celebrate
+  // Detect level up
   useEffect(() => {
     if (level > prevLevelRef.current) {
       celebrateLevelUp()
-      toast.success(`🎉 Niveau ${level} atteint !`, {
-        description: getLevelTitle(level),
-        duration: 5000,
-      })
+      setLevelUpLevel(level)
     }
     prevLevelRef.current = level
   }, [level])
 
-  // Helper to check badges and show toast for new ones
-  const checkBadges = useCallback(() => {
-    const stats = getStats()
-    const categoryResisted = getCategoryResistedStats()
-    // Get latest streak from store
-    const latestStreak = useGamificationStore.getState().currentStreak
-    const badgeStats: BadgeStats = {
-      totalSaved: stats.totalSaved,
-      resistedCount: stats.resistedCount,
-      currentStreak: latestStreak,
-      categoryResisted,
-    }
-    const newBadges = checkAndUnlock(badgeStats)
-    if (newBadges.length > 0) {
-      celebrateBadge()
-      newBadges.forEach((badge) => {
-        toast.success(`${badge.emoji} Badge débloqué !`, {
-          description: badge.name,
+  // Weekly reset check on mount
+  useEffect(() => {
+    const prevWeekDate = new Date()
+    prevWeekDate.setDate(prevWeekDate.getDate() - 7)
+    const prevWeekId = getWeekId(prevWeekDate)
+    const prevWeekExpenses = getExpensesForWeek(prevWeekId)
+    const prevWeekTotal = prevWeekExpenses.reduce((sum: number, e: Expense) => sum + e.amount, 0)
+
+    const result = processWeekEnd(prevWeekTotal)
+    if (result) {
+      const { gemsEarned, summary } = result
+      if (gemsEarned > 0) {
+        addGems(gemsEarned)
+        incrementStreak(summary.weekId)
+
+        // XP: base + streak bonus
+        const streakBonus = XP_REWARDS.STREAK_BONUS(currentStreak + 1)
+        const totalXP = XP_REWARDS.WEEK_UNDER_BUDGET + streakBonus
+        addXP(totalXP)
+
+        celebrateBadge()
+        toast.success(`Semaine réussie ! +${gemsEarned} rubis`, {
+          description: `${summary.remaining.toFixed(2)} € économisés · +${totalXP} XP${streakBonus > 0 ? ` (dont ${streakBonus} streak)` : ''}`,
           duration: 5000,
         })
-      })
-    }
-  }, [checkAndUnlock])
-
-  // Load initial data - useState initializer runs only once
-  const [initialResolved] = useState(() => {
-    const data = getInitialState()
-    return data.resolved
-  })
-  const [temptations, setTemptations] = useState<Temptation[]>(() => getActiveTemptations())
-  const [stats, setStats] = useState(() => {
-    const s = getStats()
-    return { totalSaved: s.totalSaved, netSaved: s.netSaved, resistedCount: s.resistedCount, crackedCount: s.crackedCount }
-  })
-
-  // Handle resolved temptations on mount
-  useEffect(() => {
-    if (initialResolved.length > 0) {
-      initialResolved.forEach(() => {
-        addXP(XP_REWARDS.RESIST_TEMPTATION)
-        incrementStreak()
-      })
-      const totalSaved = initialResolved.reduce((sum, t) => sum + t.amount, 0)
-      celebrateResistance()
-      toast.success(`🎉 Tu as résisté ! +${initialResolved.length * XP_REWARDS.RESIST_TEMPTATION} XP`, {
-        description: `${totalSaved.toFixed(2)} € économisés !`,
-        duration: 5000,
-      })
-      // Send push notification
-      if (initialResolved.length === 1) {
-        notifyTimerExpired(initialResolved[0].amount)
+        notifyWeeklyGemsEarned(gemsEarned, summary.remaining)
       } else {
-        notifyMultipleExpired(initialResolved.length, totalSaved)
+        toast('Budget dépassé la semaine dernière', {
+          description: `${Math.abs(summary.remaining).toFixed(2)} € de dépassement`,
+          duration: 4000,
+        })
+        notifyWeeklyOverBudget(Math.abs(summary.remaining))
       }
-      // Check for new badges
-      checkBadges()
     }
-  }, [initialResolved, addXP, incrementStreak, checkBadges])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Periodic refresh
+  // Build mascot context for phrase generation
+  const weekExpenses = getExpensesForWeek()
+  const weeklyBudget = getEffectiveBudget()
+  const weeklySpent = getTotalForWeek()
+  const categoryBreakdown = getCategoryBreakdown(weekExpenses)
+  const topCategory = Object.entries(categoryBreakdown)
+    .filter(([, amount]) => amount > 0)
+    .sort(([, a], [, b]) => b - a)[0]?.[0] as ExpenseCategory | undefined
+
+  // Rotate phrase: visible 10s, hidden 50s, repeat
+  const [phraseTick, setPhraseTick] = useState(0)
+  const [phraseVisible, setPhraseVisible] = useState(true)
   useEffect(() => {
-    const interval = setInterval(() => {
-      const resolved = checkAndResolveExpired()
-      if (resolved.length > 0) {
-        resolved.forEach(() => {
-          addXP(XP_REWARDS.RESIST_TEMPTATION)
-          incrementStreak()
-        })
-        const totalSaved = resolved.reduce((sum, t) => sum + t.amount, 0)
-        celebrateResistance()
-        toast.success(`🎉 Tu as résisté ! +${resolved.length * XP_REWARDS.RESIST_TEMPTATION} XP`, {
-          description: `${totalSaved.toFixed(2)} € économisés !`,
-          duration: 5000,
-        })
-        // Send push notification
-        if (resolved.length === 1) {
-          notifyTimerExpired(resolved[0].amount)
-        } else {
-          notifyMultipleExpired(resolved.length, totalSaved)
-        }
-        // Check for new badges
-        checkBadges()
-      }
-      setTemptations(getActiveTemptations())
-      const newStats = getStats()
-      setStats({
-        totalSaved: newStats.totalSaved,
-        netSaved: newStats.netSaved,
-        resistedCount: newStats.resistedCount,
-        crackedCount: newStats.crackedCount,
-      })
-    }, 60 * 1000)
-    return () => clearInterval(interval)
-  }, [addXP, incrementStreak, checkBadges])
+    // Show for 10s, then hide
+    setPhraseVisible(true)
+    const hideTimer = setTimeout(() => setPhraseVisible(false), 10_000)
+    // After 60s total, new phrase
+    const nextTimer = setTimeout(() => setPhraseTick((t) => t + 1), 60_000)
+    return () => { clearTimeout(hideTimer); clearTimeout(nextTimer) }
+  }, [phraseTick])
 
-  const refreshData = () => {
-    setTemptations(getActiveTemptations())
-    const newStats = getStats()
-    setStats({
-      totalSaved: newStats.totalSaved,
-      netSaved: newStats.netSaved,
-      resistedCount: newStats.resistedCount,
-      crackedCount: newStats.crackedCount,
-    })
-  }
+  const mascotPhrase = useMemo(() => {
+    const ctx: MascotContext = {
+      hour: new Date().getHours(),
+      weeklyRemaining: weeklyBudget - weeklySpent,
+      weeklyBudget,
+      weeklySpent,
+      monthlySpent: getTotalForMonth(),
+      expenseCount: weekExpenses.length,
+      topCategory: topCategory ?? null,
+      totalForSelf: getTotalForSelf(),
+      totalForOthers: getTotalForOthers(),
+      currentStreak,
+      level,
+      gems: getAvailableGems(),
+    }
+    return getMascotPhrase(ctx)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weeklySpent, weekExpenses.length, currentStreak, level, phraseTick])
 
-  const handleCrack = (id: string) => {
-    markAsCracked(id)
-    addXP(XP_REWARDS.CONSCIOUS_CRACK)
-
-    toast('Dépense consciente notée', {
-      description: `+${XP_REWARDS.CONSCIOUS_CRACK} XP - La conscience, c'est déjà une victoire !`,
-      duration: 4000,
-    })
-
-    refreshData()
-  }
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount)
-  }
+  const menuItems = [
+    { label: 'Arbre de talents', icon: Sparkles, action: () => navigate('/talents'), color: 'text-yellow-400' },
+    { label: 'Statistiques', icon: BarChart3, action: () => navigate('/stats'), color: 'text-blue-400' },
+    { label: 'Budget & dépenses fixes', icon: PiggyBank, action: () => navigate('/budget'), color: 'text-amber-400' },
+    { label: 'Nouveau revenu', icon: TrendingUp, action: () => navigate('/new-revenue'), color: 'text-emerald-400' },
+    { label: 'Changer de mascotte', icon: Cat, action: () => setMascotPickerOpen(true), color: 'text-purple-400' },
+    { label: 'Déconnexion', icon: LogOut, action: () => { logout(); navigate('/login') }, color: 'text-red-400' },
+  ]
 
   return (
-    <div className="min-h-screen pb-24 lg:pb-8">
-      {/* Header - Mobile only */}
-      <div className="lg:hidden sticky top-0 z-10 bg-background/60 backdrop-blur-xl border-b border-primary/10 px-4 py-3">
-        <div className="flex items-center justify-between max-w-md mx-auto">
-          <div className="flex items-center gap-3">
-            <CatMascot size="sm" />
-            <h1 className="text-xl font-light tracking-tight text-text">
-              <span className="font-semibold text-primary">Gestion</span>Achat
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {currentStreak > 0 && (
-              <span className="text-sm font-medium text-primary bg-primary/20 px-3 py-1 rounded-full border border-primary/30">
-                {currentStreak} 🔥
-              </span>
-            )}
-            <Button variant="ghost" size="icon" className="text-muted hover:text-text hover:bg-white/5" onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </div>
+    <ImmersiveBackground>
+      {/* Top Stats Bar */}
+      <TopStatsBar onMenuOpen={() => setMenuOpen(true)} />
 
-      {/* Desktop Header */}
-      <div className="hidden lg:block border-b border-primary/10 px-8 py-6 bg-background/40 backdrop-blur-sm">
-        <h1 className="text-2xl font-light text-text">Tableau de bord</h1>
-        <p className="text-muted mt-1">Bienvenue, prêt·e à résister ?</p>
-      </div>
+      {/* Menu Overlay */}
+      {menuOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setMenuOpen(false)} />
+          <div className="fixed top-14 left-3 right-3 max-w-xs bg-[#1A1425]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-50">
+            {menuItems.map((item, i) => {
+              const Icon = item.icon
+              return (
+                <button
+                  key={i}
+                  onClick={() => { item.action(); setMenuOpen(false) }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/10 transition-colors first:rounded-t-2xl last:rounded-b-2xl"
+                >
+                  <Icon className={cn('h-5 w-5', item.color)} />
+                  <span className="text-sm text-white font-medium">{item.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
 
-      <div className="p-4 lg:p-8 space-y-5 lg:space-y-6 max-w-md lg:max-w-none mx-auto">
-        {/* Notification Permission Banner */}
-        {notifSupported && permissionStatus === 'default' && !hasAskedPermission && (
+      {/* Notification Banner */}
+      {notifSupported && permissionStatus === 'default' && !hasAskedPermission && (
+        <div className="pt-20 px-5">
           <button
             onClick={askPermission}
-            className="w-full p-4 glass-card rounded-2xl flex items-center gap-3 hover:bg-white/10 transition-all border-primary/30"
+            className="w-full p-3 bg-black/30 backdrop-blur-sm rounded-xl flex items-center gap-3 border border-white/10"
           >
-            <div className="p-2.5 bg-primary/20 rounded-xl">
-              <Bell className="h-5 w-5 text-primary" />
-            </div>
+            <span className="text-lg">🔔</span>
             <div className="text-left flex-1">
-              <p className="text-sm font-medium text-text">Activer les notifications</p>
-              <p className="text-xs text-muted">Pour ne pas rater la fin de tes timers</p>
+              <p className="text-xs font-medium text-white">Activer les notifications</p>
+              <p className="text-[10px] text-white/50">Pour le bilan hebdomadaire</p>
             </div>
           </button>
-        )}
-
-        {/* Stats Grid - Desktop: 4 cols, Mobile: stacked */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-5">
-          {/* Coffre Card - Premium Style */}
-          <div
-            className="coffre-premium rounded-2xl cursor-pointer hover:scale-[1.02] transition-all duration-300"
-            onClick={() => navigate('/history')}
-          >
-            <div className="p-6 relative z-10">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-2 bg-primary/20 rounded-xl">
-                      <Gem className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="text-sm text-muted font-medium">Ton coffre</p>
-                  </div>
-                  <p className={`text-4xl font-bold mb-1 tracking-tight ${stats.netSaved < 0 ? 'text-red-400' : 'text-text'}`}>
-                    {formatAmount(stats.netSaved)}
-                  </p>
-                  <p className="text-sm text-primary/80">
-                    {stats.resistedCount} résistée{stats.resistedCount > 1 ? 's' : ''} 💪
-                    {stats.crackedCount > 0 && (
-                      <span className="text-red-400/80"> · {stats.crackedCount} craquée{stats.crackedCount > 1 ? 's' : ''}</span>
-                    )}
-                  </p>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setGoalInput(savingsGoal?.toString() || '')
-                    setGoalReasonInput(savingsGoalReason || '')
-                    setShowGoalDialog(true)
-                  }}
-                  className="p-2.5 bg-white/10 rounded-xl hover:bg-white/20 transition-colors border border-white/10"
-                  title="Définir un objectif"
-                >
-                  <Target className="h-5 w-5 text-primary" />
-                </button>
-              </div>
-
-              {/* Goal Progress */}
-              {savingsGoal && savingsGoal > 0 && (
-                <div className="mt-5 pt-4 border-t border-white/10">
-                  <div className="flex justify-between text-xs text-muted mb-2">
-                    <span className="text-primary/80">
-                      {savingsGoalReason ? (
-                        <>{savingsGoalReason} • {formatAmount(savingsGoal)}</>
-                      ) : (
-                        <>Objectif: {formatAmount(savingsGoal)}</>
-                      )}
-                    </span>
-                    <span className="text-primary font-semibold">{Math.round(getProgress(stats.netSaved))}%</span>
-                  </div>
-                  <Progress value={getProgress(stats.netSaved)} className="h-2.5" />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* XP Card - Clickable to stats */}
-          <Card
-            className="cursor-pointer hover:scale-[1.02] transition-all duration-300"
-            onClick={() => navigate('/stats')}
-          >
-            <CardContent className="p-5 lg:p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-muted">Niveau {level}</span>
-                <span className="text-sm font-bold text-primary bg-primary/20 px-2 py-0.5 rounded-lg">{xp} XP</span>
-              </div>
-              <Progress value={getLevelProgress() * 100} className="h-2.5" />
-              <p className="text-xs text-accent mt-2 font-medium">{getLevelTitle(level)}</p>
-            </CardContent>
-          </Card>
-
-          {/* Streak Card */}
-          <Card className="hover:scale-[1.02] transition-all duration-300">
-            <CardContent className="p-5 lg:p-6">
-              <p className="text-4xl font-bold text-text">
-                {currentStreak} <span className="text-2xl">🔥</span>
-              </p>
-              <p className="text-sm text-muted mt-1">
-                {currentStreak === 0 ? 'Lance ta série !' : 'jours de suite'}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Gems Card */}
-          <Card
-            className="cursor-pointer hover:scale-[1.02] transition-all duration-300 bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent border-amber-500/30"
-            onClick={() => navigate('/shop')}
-          >
-            <CardContent className="p-5 lg:p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">💎</span>
-                <p className="text-3xl font-bold text-amber-400">
-                  {getGems(Math.max(0, stats.netSaved))}
-                </p>
-              </div>
-              <p className="text-sm text-amber-300/80">
-                {getActiveVouchers().length > 0
-                  ? `${getActiveVouchers().length} bon${getActiveVouchers().length > 1 ? 's' : ''} disponible${getActiveVouchers().length > 1 ? 's' : ''}`
-                  : 'Ouvrir la boutique'}
-              </p>
-            </CardContent>
-          </Card>
         </div>
+      )}
 
-        {/* Active Temptations */}
-        <div>
-          <div className="flex items-center justify-between mb-3 lg:mb-4">
-            <h2 className="font-bold text-text lg:text-xl">
-              Tentations en cours ({temptations.length})
-            </h2>
-            {/* Desktop: inline button */}
-            <Button
-              onClick={() => navigate('/new')}
-              className="hidden lg:flex h-10 px-4 rounded-xl bg-primary hover:bg-primary-deep text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle tentation
-            </Button>
-          </div>
-
-          {temptations.length === 0 ? (
-            <Card className="lg:max-w-md border-dashed border-2 border-primary/20 bg-transparent">
-              <CardContent className="py-10 text-center">
-                <p className="text-5xl mb-4">🎯</p>
-                <p className="text-text font-medium mb-1">Aucune tentation en cours</p>
-                <p className="text-sm text-muted">
-                  Ajoute ta première pour commencer !
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
-              {temptations.map((temptation) => (
-                <TemptationCard
-                  key={temptation.id}
-                  temptation={temptation}
-                  onCrack={handleCrack}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* FAB - Mobile only */}
-      <div className="lg:hidden fixed bottom-6 left-0 right-0 flex justify-center">
-        <Button
-          onClick={() => navigate('/new')}
-          className="h-14 px-8 rounded-full bg-gradient-to-r from-primary to-primary-deep text-white shadow-2xl shadow-primary/40 transition-all hover:scale-105 hover:shadow-primary/60 border border-white/20"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Nouvelle tentation
-        </Button>
-      </div>
-
-      {/* Goal Dialog */}
-      <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Objectif d'économie</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <p className="text-sm text-muted">
-              Définis un objectif pour te motiver à résister !
-            </p>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="200"
-                value={goalInput}
-                onChange={(e) => setGoalInput(e.target.value)}
-                className="w-full text-3xl font-light text-center bg-muted/10 border border-muted/20 rounded-xl py-4 px-4 text-text placeholder:text-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-light text-muted">€</span>
-            </div>
-            <input
-              type="text"
-              placeholder="Pour quoi ? (ex: Voyage au Japon, Nouveau vélo...)"
-              value={goalReasonInput}
-              onChange={(e) => setGoalReasonInput(e.target.value)}
-              className="w-full text-sm bg-muted/10 border border-muted/20 rounded-xl py-3 px-4 text-text placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+      {/* Main Content */}
+      <div className="min-h-screen flex flex-col items-center pt-20 pb-6 px-5">
+        {/* Action Buttons - right after top bar */}
+        <div className="w-full max-w-sm mt-2 space-y-2.5">
+          <GameButton
+            onClick={() => navigate('/new')}
+            icon={<Wallet className="h-6 w-6" />}
+            label="Nouvelle dépense"
+            colors={theme.btnPrimary}
+            decoration={theme.decoration}
+            size="full"
+          />
+          <div className="grid grid-cols-2 gap-2.5">
+            <GameButton
+              onClick={() => navigate('/shop')}
+              icon={<ShoppingBag className="h-5 w-5" />}
+              label="Boutique"
+              colors={theme.btnShop}
+              decoration={theme.decoration}
+              size="half"
+            />
+            <GameButton
+              onClick={() => setExpenseSheetOpen(true)}
+              icon={<Receipt className="h-5 w-5" />}
+              label="Dépenses"
+              colors={theme.btnExpenses}
+              decoration={theme.decoration}
+              size="half"
             />
           </div>
-          <DialogFooter className="flex gap-2 sm:gap-2">
-            {savingsGoal && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSavingsGoal(null)
-                  setShowGoalDialog(false)
-                  toast('Objectif supprimé')
-                }}
-                className="flex-1"
-              >
-                Supprimer
-              </Button>
-            )}
-            <Button
-              onClick={() => {
-                const amount = parseFloat(goalInput.replace(',', '.'))
-                if (!isNaN(amount) && amount > 0) {
-                  const reason = goalReasonInput.trim() || null
-                  setSavingsGoal(amount, reason)
-                  setShowGoalDialog(false)
-                  toast.success(`Objectif fixé à ${formatAmount(amount)} !`, {
-                    description: reason || 'Tu peux le faire !',
-                  })
-                }
-              }}
-              className="flex-1 bg-primary hover:bg-primary-deep text-white"
-            >
-              Valider
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+
+        {/* Speech bubble */}
+        <div className="flex-1 flex flex-col items-center justify-center w-full max-w-xs">
+          <div className={`speech-bubble relative overflow-hidden rounded-2xl px-5 py-3.5 border border-white/25 shadow-lg transition-opacity duration-500 ${phraseVisible ? 'opacity-100' : 'opacity-0'}`}
+            style={{
+              background: `linear-gradient(135deg, ${theme.bubbleBg} 0%, rgba(255,255,255,0.08) 100%)`,
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2)',
+            }}
+          >
+            <p className="relative z-10 text-sm text-white text-center leading-relaxed font-medium" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+              {mascotPhrase}
+            </p>
+            {/* Triangle pointer */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 border-r border-b border-white/25"
+              style={{ background: theme.bubbleBg }}
+            />
+          </div>
+        </div>
+
+        {/* Mascot Zone - sits at the bottom */}
+        <div className="flex items-end justify-center pb-4 mt-3">
+          <CatMascot size="hero" showBackground={false} />
+        </div>
+      </div>
+
+      {/* Expense Sheet */}
+      <ExpenseSheet open={expenseSheetOpen} onClose={() => setExpenseSheetOpen(false)} />
+
+      {/* Mascot Picker Overlay */}
+      <MascotPicker open={mascotPickerOpen} onClose={() => setMascotPickerOpen(false)} />
+
+      {/* DEV: Test level-up modal */}
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => setLevelUpLevel(level + 1)}
+          className="fixed bottom-4 right-4 z-50 px-3 py-1.5 text-xs bg-red-500/80 text-white rounded-lg"
+        >
+          Test LevelUp
+        </button>
+      )}
+
+      {/* Level Up Modal */}
+      <LevelUpModal
+        level={levelUpLevel ?? level}
+        open={levelUpLevel !== null}
+        onClose={() => setLevelUpLevel(null)}
+      />
+    </ImmersiveBackground>
   )
 }
